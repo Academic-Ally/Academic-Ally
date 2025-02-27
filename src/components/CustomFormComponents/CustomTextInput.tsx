@@ -135,7 +135,7 @@ export const CustomTextInput = ({
           style={{
             color: theme.colors.primaryText,
             fontSize: Height * 0.015,
-            fontFamily: 'Poppins-Regular',
+            // fontFamily: 'Poppins-Regular',
             paddingLeft: 20,
             fontWeight: 'bold',
           }}>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   textInput: {
     height: Height * 0.07,
     fontSize: Height * 0.018,
-    fontFamily: 'Poppins-Regular',
+    // fontFamily: 'Poppins-Regular',
     alignItems: 'flex-start',
     textAlign:'left',
     flex:1

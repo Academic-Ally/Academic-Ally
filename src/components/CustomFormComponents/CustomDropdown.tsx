@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     width: 250,
     fontSize: height * 0.0235,
     color: '#161719',
-    fontFamily: 'Poppins-Regular',
+    // fontFamily: 'Poppins-Regular',
   },
   container: {
     marginTop: 1,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     height: 50,
     fontSize: height * 0.0205,
     color: '#161719',
-    fontFamily: 'Poppins-Regular',
+    // fontFamily: 'Poppins-Regular',
     borderRadius: 10,
   },
 });

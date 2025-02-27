@@ -194,7 +194,7 @@ export const CustomDropdown = ({
           style={{
             color: theme.colors.primaryText,
             fontSize: height * 0.015,
-            fontFamily: 'Poppins-Regular',
+            // fontFamily: 'Poppins-Regular',
             alignSelf: 'flex-start',
             marginLeft: 0,
             fontWeight: 'bold',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     width: 250,
     fontSize: height * 0.0235,
     color: '#161719',
-    fontFamily: 'Poppins-Regular',
+    // fontFamily: 'Poppins-Regular',
   },
   container: {
     marginTop: 1,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     height: 50,
     fontSize: height * 0.0205,
     color: '#161719',
-    fontFamily: 'Poppins-Regular',
+    // fontFamily: 'Poppins-Regular',
     borderRadius: 10,
   },
 });

@@ -85,9 +85,29 @@ const BottomTabBar = () => {
   const {photoURL} = useSelector((state) => state.bootReducer.userInfo)|| "";
 
     const TabIcon = ({ focused, iconName, labelText }) => (
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: width * 0.23 }}>
-            <Feather name={iconName} size={theme.sizes.iconMedium} color={focused ? '#FF8181' : theme.colors.primaryText} style={{ bottom: focused ? 3 : 0 }} />
-            {focused ? <Text style={{ color: '#FF8181', fontSize: theme.sizes.textSmall, fontWeight: '400', textAlign: "center", bottom: 0 }}>{labelText}</Text> : null}
+        <View style={{ 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: width * 0.18,
+            paddingVertical: 8
+        }}>
+            <Feather 
+                name={iconName} 
+                size={theme.sizes.iconMedium} 
+                color={focused ? '#FF8181' : theme.colors.primaryText} 
+                style={{ marginBottom: focused ? 4 : 0 }} 
+            />
+            {focused ? (
+                <Text style={{ 
+                    color: '#FF8181', 
+                    fontSize: theme.sizes.textSmall, 
+                    fontWeight: '500',
+                    textAlign: "center",
+                    marginTop: 2
+                }}>
+                    {labelText}
+                </Text>
+            ) : null}
         </View>
     );
 
@@ -101,7 +121,7 @@ const BottomTabBar = () => {
                     headerShown: false,
                     tabBarStyle: {
                         position: "absolute",
-                        height: height * 0.08,
+                        height: height * 0.09,
                         backgroundColor: theme.colors.quaternary,
                         borderTopLeftRadius: 30,
                         borderTopRightRadius: 30,
@@ -111,6 +131,15 @@ const BottomTabBar = () => {
                         right: 0,
                         overflow: "hidden",
                         borderTopWidth: 0,
+                        paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+                        paddingTop: 8,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                            width: 0,
+                            height: -2,
+                        },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 3,
                     },
                 }}
             >
@@ -342,7 +371,6 @@ const BootScreen = () => {
             case 'PdfViewer':
                 Linking.openURL("https://academicallyapp.page.link/PdfViewer");
                 break;
-                break;
             case 'Profile':
                 Linking.openURL("https://academicallyapp.page.link/Profile");
                 break;
@@ -362,19 +390,21 @@ const BootScreen = () => {
     
 
     useEffect(() => {
-        const unsubscribe = messaging().onMessage(async messageObj => {
-            BootActions.handleNotification(messageObj);
+        // Handle foreground messages
+        const messageListener = messaging().onMessage(async messageObj => {
+            handleNotification(messageObj);
         });
 
-        return unsubscribe;
-    }, []);
-    
-    useEffect(() => {
+        // Handle initial notification when app is opened from quit state
         messaging().getInitialNotification().then(async messageObj => {
-            if (messageObj?.data?.notesId !== null) {
+            if (messageObj?.data?.notesId) {
                 handleNotification(messageObj);
             }
         });
+
+        return () => {
+            messageListener();
+        };
     }, []);
 
     if (initializing) {
