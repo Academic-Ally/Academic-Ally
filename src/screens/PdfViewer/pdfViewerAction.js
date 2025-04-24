@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { firestoreDB, getCurrentUser } from '../../Modules/auth/firebase/firebase';
 import CrashlyticsService from '../../services/CrashlyticsService';
+import PermissionsService from '../../services/PermissionsService';
 import { addItemToDownloadingList, removeItemFromDownloadingList, setDownloadProgress, setIsDownloading, updateDownloadProgress } from './pdfViewerSlice';
 
 import 'react-native-get-random-values';
@@ -98,7 +99,18 @@ class PdfViewerAction {
         }
     }
 
-    static downloadFile = (notesData, url, setTaskId, setProgress) => (dispatch) => {
+    static downloadFile = (notesData, url, setTaskId, setProgress) => async (dispatch) => {
+        // Check for storage permission before downloading
+        const hasPermission = await PermissionsService.requestStoragePermission();
+        if (!hasPermission) {
+            Toast.show({
+                title: 'Cannot download without storage permission',
+                duration: 3000,
+                backgroundColor: '#d9534f',
+            });
+            return;
+        }
+        
         setProgress(0)
         const fileSize = notesData?.size / 1024;
         const pdfFileName = `${notesData?.name}_${notesData?.branch}_${notesData?.sem}.pdf`;
@@ -254,112 +266,280 @@ class PdfViewerAction {
         const pdfPath = `${RNFS.DocumentDirectoryPath}/${notesData?.id}_${notesData?.name}`;
       
         try {
-          if (splitPageNumbers.length === 0) {
-            const uploadResponse = await this.uploadFileAndProcessPdf(
-              pdfUrl,
-              outputPath,
-              uid,
-              notesData,
-              uniqueId,
-              splitPageNumbers,
-              setCurrentProgress,
-              setStartedProcessing
-            );;
-            return uploadResponse;
-          } else {
-            await RNFS.downloadFile({ fromUrl: url, toFile: pdfPath }).promise;
-            setCurrentProgress("Splitting and creating new PDF...")
-            const pdfData = await RNFS.readFile(pdfPath, 'base64');
-            const pdfDoc = await PDFDocument.load(pdfData);
-            const newPdfDoc = await PDFDocument.create();
-            
-            for (const pageNumbers of splitPageNumbers) {
-              const copiedPage = await newPdfDoc.copyPages(pdfDoc, [pageNumbers - 1]);
-              newPdfDoc.addPage(copiedPage[0]);
+          // Maximum number of retries for server errors
+          const MAX_RETRIES = 2;
+          
+          // Implement a retry wrapper for the uploadFileAndProcessPdf function
+          const uploadWithRetry = async (retryCount = 0) => {
+            try {
+              return await this.uploadFileAndProcessPdf(
+                pdfUrl,
+                outputPath,
+                uid,
+                notesData,
+                uniqueId,
+                splitPageNumbers,
+                setCurrentProgress,
+                setStartedProcessing
+              );
+            } catch (error) {
+              // Check if it's a 500 server error and we still have retries left
+              if (error.message && error.message.includes('500') && retryCount < MAX_RETRIES) {
+                setCurrentProgress(`Server error, retrying (${retryCount + 1}/${MAX_RETRIES})...`);
+                // Wait a bit before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+                return uploadWithRetry(retryCount + 1);
+              }
+              // If we've exhausted retries or it's not a 500 error, rethrow
+              throw error;
             }
-      
-            const newPdfBytes = await newPdfDoc.save();
-            const fileContent = newPdfBytes;
-            const uploadParams = {
-              Bucket: 'academic-ally',
-              Key: outputPath,
-              Body: fileContent,
-            };
-            await this.s3.upload(uploadParams).promise().catch((error) => {
-                setCurrentProgress('Cloud upload in progress...')
-              return false;
-            });
-            const uploadResponse = await this.uploadFileAndProcessPdf(
-              pdfUrl,
-              outputPath,
-              uid,
-              notesData,
-              uniqueId,
-              splitPageNumbers,
-              setCurrentProgress,
-              setStartedProcessing
-            );
-            return uploadResponse;
+          };
+          
+          if (splitPageNumbers.length === 0) {
+            // Just upload the file without splitting
+            return await uploadWithRetry();
+          } else {
+            // Download, split and then upload the PDF
+            try {
+              // Download the PDF file
+              setCurrentProgress("Downloading original PDF...");
+              await RNFS.downloadFile({ 
+                fromUrl: url, 
+                toFile: pdfPath,
+                progress: (res) => {
+                  // Show download progress
+                  const progressPercent = res.bytesWritten / res.contentLength;
+                  setCurrentProgress(`Downloading original PDF: ${Math.round(progressPercent * 100)}%`);
+                }
+              }).promise;
+              
+              setCurrentProgress("Preparing to split PDF...");
+              
+              // Read the PDF file - use a streaming approach for large files
+              const pdfData = await RNFS.readFile(pdfPath, 'base64');
+              
+              try {
+                // Load PDF document
+                setCurrentProgress("Loading PDF document...");
+                const pdfDoc = await PDFDocument.load(pdfData, {
+                  // Add options to handle potential issues with corrupt PDFs
+                  ignoreEncryption: true,
+                  throwOnInvalidObject: false
+                });
+                
+                const totalPages = pdfDoc.getPageCount();
+                
+                // Validate page numbers
+                const validPageNumbers = splitPageNumbers.filter(pageNum => 
+                  pageNum > 0 && pageNum <= totalPages
+                );
+                
+                if (validPageNumbers.length === 0) {
+                  throw new Error(`Invalid page numbers. The PDF has ${totalPages} pages.`);
+                }
+                
+                // Create a new PDF document
+                setCurrentProgress("Creating new PDF with selected pages...");
+                const newPdfDoc = await PDFDocument.create();
+                
+                // Process pages in batches to improve memory usage for large PDFs
+                const BATCH_SIZE = 5;
+                for (let i = 0; i < validPageNumbers.length; i += BATCH_SIZE) {
+                  const currentBatch = validPageNumbers.slice(i, i + BATCH_SIZE);
+                  setCurrentProgress(`Processing pages ${i+1} to ${Math.min(i+BATCH_SIZE, validPageNumbers.length)} of ${validPageNumbers.length}...`);
+                  
+                  // Copy pages in current batch
+                  for (const pageNumber of currentBatch) {
+                    try {
+                      const copiedPages = await newPdfDoc.copyPages(pdfDoc, [pageNumber - 1]);
+                      newPdfDoc.addPage(copiedPages[0]);
+                    } catch (pageError) {
+                      console.error(`Error copying page ${pageNumber}:`, pageError);
+                      setCurrentProgress(`Warning: Couldn't copy page ${pageNumber}, skipping...`);
+                      // Continue with other pages even if one fails
+                    }
+                  }
+                }
+                
+                // Save the new PDF
+                setCurrentProgress("Generating final PDF...");
+                const newPdfBytes = await newPdfDoc.save();
+                const fileContent = newPdfBytes;
+                
+                // Upload to S3 with progress tracking
+                setCurrentProgress("Uploading to cloud storage...");
+                const uploadParams = {
+                  Bucket: 'academic-ally',
+                  Key: outputPath,
+                  Body: fileContent,
+                };
+                
+                try {
+                  const upload = this.s3.upload(uploadParams);
+                  
+                  // Add upload progress tracking
+                  upload.on('httpUploadProgress', (progress) => {
+                    const percentage = Math.round((progress.loaded / progress.total) * 100);
+                    setCurrentProgress(`Uploading to cloud: ${percentage}%`);
+                  });
+                  
+                  await upload.promise();
+                  setCurrentProgress("Cloud upload complete, processing PDF...");
+                } catch (s3Error) {
+                  console.error("S3 upload error:", s3Error);
+                  setCurrentProgress("Cloud upload encountered an issue, but trying to continue...");
+                  // Continue despite S3 error as the file might have been uploaded partially
+                }
+                
+                // Process the uploaded PDF with retry logic
+                setCurrentProgress("Preparing for analysis...");
+                return await uploadWithRetry();
+                
+              } catch (pdfError) {
+                console.error("PDF processing error:", pdfError);
+                setCurrentProgress("Error processing the PDF file. Please try again.");
+                throw new Error("Failed to process PDF: " + (pdfError.message || "Unknown error"));
+              }
+            } catch (downloadError) {
+              console.error("Download error:", downloadError);
+              setCurrentProgress("Error downloading the PDF file. Please check your connection.");
+              throw new Error("Failed to download PDF: " + (downloadError.message || "Unknown error"));
+            }
           }
         } catch (error) {
           console.error('Error while splitting and saving PDF:', error);
-          setStartedProcessing(false)
+          // Show more detailed error message to the user
+          setCurrentProgress(`Error: ${error.message || 'Failed to process PDF'}`);
+          setStartedProcessing(false);
+          
+          // If it's a server error, suggest checking internet connection
+          if (error.message && error.message.includes('500')) {
+            setCurrentProgress('Server error. Please check your internet connection and try again later.');
+          }
+          
           return false;
+        } finally {
+          // Cleanup: remove temporary files
+          try {
+            if (await RNFS.exists(pdfPath)) {
+              await RNFS.unlink(pdfPath);
+            }
+          } catch (cleanupError) {
+            console.error("Failed to clean up temporary files:", cleanupError);
+          }
         }
     };
       
     static uploadFileAndProcessPdf = async (fileUrl, outputPath, uid, notesData, uniqueId, splitPageNumbers, setCurrentProgress, setStartedProcessing) => {
-        return new Promise(async (resolve, reject) => {
-          setCurrentProgress('Processing...')
-          try {
-            const response = await fetch(`https://us-central1-academic-ally-app.cloudfunctions.net/initiateChat?userId=${uid}&fileUrl=${fileUrl}`);
-            if (!response.ok) {
-              throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = {
-                ...await response.json(),
-                docId: `${notesData.id}_${uniqueId}`
-            };
-            setCurrentProgress('Initiating chat...')
-            if (data?.sourceId) {
-              try {
-                await firestoreDB()
-                  .collection('Users')
-                  .doc(uid)
-                  .collection('InitializedPdf')
-                  .doc(`${notesData.id}_${uniqueId}`)
-                  .set({
-                    Year: '',
-                    branch: notesData?.branch,
-                    sem: notesData?.sem,
-                    university: notesData?.university,
-                    course: notesData?.course,
-                    subject: notesData?.subject,
-                    sourceId: data?.sourceId,
-                    category: notesData?.category,
-                    name: notesData?.name,
-                    uniqueId,
-                    date: new Date(),
-                    pages: splitPageNumbers?.length > 0 ? splitPageNumbers : [],
-                    url: outputPath,
-                    conversation: [],
-                    docId: notesData.id,
-                  });
-                resolve(data); 
-              } catch (error) {
-                setStartedProcessing(false)
-                console.log( `Error creating Initialized PDF document: ${error.message}`)
-                reject({ message: `Error creating Initialized PDF document: ${error.message}` });
-              }
-            } else {
-              setStartedProcessing(false)
-              resolve(data); 
-            }
-          } catch (error) {
-            setStartedProcessing(false)
-            reject({ message: `Error: ${error.message}` });
-          }
+      try {
+        setCurrentProgress('Processing...');
+        // Use a stable API URL instead of ngrok (which is temporary)
+        // If you have a stable API URL, replace this
+        // Updated the API URL with the new active ngrok URL
+        const API_URL = 'https://academicallyapp.netlify.app/.netlify/functions/chat/initiate';
+        
+        // Call the backend API with proper POST method and headers
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: uid,
+            fileUrl: fileUrl
+          }),
+          // Add a timeout to prevent indefinite hanging
+          timeout: 30000 // 30 seconds timeout
         });
+    
+        // Get response as text first to handle both JSON and non-JSON responses safely
+        const responseText = await response.text();
+        
+        if (!response.ok) {
+          console.error(`HTTP error: ${response.status}`);
+          console.error(`Response: ${responseText.substring(0, 200)}`);
+          
+          // For 502/504 errors, it might be a server timeout
+          if (response.status === 502 || response.status === 504) {
+            throw new Error(`Server timeout. The PDF might be too large or the server is busy.`);
+          }
+          
+          try {
+            const errorData = JSON.parse(responseText);
+            throw new Error(errorData.message || `API error: ${response.status}`);
+          } catch (parseError) {
+            // If response is not valid JSON (e.g., HTML error page)
+            if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+              throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+            } else {
+              throw new Error(`Server returned an invalid response. Status: ${response.status}`);
+            }
+          }
+        }
+    
+        // Parse JSON response safely
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error("JSON parse error:", jsonError);
+          console.error("Response text:", responseText.substring(0, 100));
+          throw new Error("Failed to parse server response");
+        }
+        
+        setCurrentProgress('Initiating chat...');
+    
+        if (!data?.sourceId) {
+          return { ...data, docId: `${notesData.id}_${uniqueId}` };
+        }
+    
+        // Create document data with defaults
+        const docData = {
+          Year: '',
+          branch: notesData?.branch || '',
+          sem: notesData?.sem || '',
+          university: notesData?.university || '',
+          course: notesData?.course || '',
+          subject: notesData?.subject || '',
+          sourceId: data.sourceId,
+          category: notesData?.category || '',
+          name: notesData?.name || 'Untitled Document',
+          uniqueId,
+          date: new Date(),
+          pages: Array.isArray(splitPageNumbers) ? splitPageNumbers : [],
+          url: outputPath,
+          conversation: [],
+          docId: notesData.id
+        };
+    
+        // Create document reference
+        const docRef = firestoreDB()
+          .collection('Users')
+          .doc(uid)
+          .collection('InitializedPdf')
+          .doc(`${notesData.id}_${uniqueId}`);
+    
+        await docRef.set(docData);
+        
+        return { ...data, docId: `${notesData.id}_${uniqueId}` };
+    
+      } catch (error) {
+        console.error('Processing error:', error);
+        setCurrentProgress(`Error: ${error.message || 'Unknown error processing PDF'}`);
+        
+        // Log to crash reporting
+        try {
+          CrashlyticsService.recordError(error);
+        } catch (crashError) {
+          console.error("Failed to log to crash reporting:", crashError);
+        }
+        
+        throw error; // Propagate error for handling in UI
+      } finally {
+        setStartedProcessing(false);
+        setCurrentProgress('');
+      }
     };
 
     static chatWithPdf = async (docId, message, uid) => {
@@ -369,6 +549,7 @@ class PdfViewerAction {
           date: new Date(),
           message: message
         };
+        console.log(body)
       
         const config = {
           method: "POST",
@@ -381,10 +562,10 @@ class PdfViewerAction {
         return new Promise(async (resolve, reject) => {
           try {
             const response = await fetch(
-              "https://us-central1-academic-ally-app.cloudfunctions.net/chatMessage",
+              "https://academicallyapp.netlify.app/.netlify/functions/chat/message",
               config
             );
-      
+            
             if (!response.ok) {
 
               CrashlyticsService.setUserId(getCurrentUser()?.uid)
@@ -392,21 +573,19 @@ class PdfViewerAction {
               // throw new Error(`HTTP error! Status: ${response.status}`);
             }
       
-            const data = await response.json();
+            const data = await response;
             resolve(data);
           } catch (error) {
-            console.log("Error:hehe", error);
             reject({ message: `Error: ${error.message}` });
           }
         });
       };
-    static monitorMessageUpdates = (chatId, setMessages, uid) => {
+    static monitorMessageUpdates = async (chatId, setMessages, uid) => {
       const chatRef = firestoreDB().collection('Users').doc(uid).collection('InitializedPdf').doc(chatId);
     
       const unsubscribe = chatRef.onSnapshot((snapshot) => {
         const chatData = snapshot?.data();
-        const messages = chatData ? chatData?.conversations : [];
-
+        const messages = chatData ? chatData?.conversation : [];
         setMessages(messages);
       });
     

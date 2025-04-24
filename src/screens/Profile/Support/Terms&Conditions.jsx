@@ -16,7 +16,7 @@ const TermsAndConditions = () => {
       <View style={styles.body}>
         <View style={styles.bodyContent}>
           <Text style={styles.title}>Terms & Conditions</Text>
-          <Text style={styles.subTitle}>Last updated: 2023-03-03</Text>
+          <Text style={styles.subTitle}>Last updated: 2025-05-18</Text>
           <View style={styles.content}>
             <Text style={styles.normalText}>
               By downloading or using the app, these terms will automatically
@@ -156,9 +156,9 @@ const TermsAndConditions = () => {
             <Text
               style={styles.linkText}
               onPress={() => {
-                Linking.openURL('mailto:contact@getacademically.co');
+                Linking.openURL('mailto:academicly.app@gmail.com');
               }}>
-              contact@getacademically.co
+              academicly.app@gmail.com
             </Text>
           </View>
         </View>

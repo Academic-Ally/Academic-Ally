@@ -5,7 +5,7 @@ import { createDrawerNavigator, DrawerActions } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Avatar } from 'native-base';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Linking, Pressable, StatusBar, Text, View } from 'react-native';
+import { Alert, Dimensions, Linking, Pressable, StatusBar, Text, View, Platform } from 'react-native';
 import Feather from "react-native-vector-icons/Feather";
 import Fontisto from "react-native-vector-icons/Fontisto";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -41,10 +41,32 @@ import BootActions from './BootAction';
 import SeekHubRequestsScreen from '../SeekHub/SeekHubRequest';
 import UserUploadRequestsScreen from '../Upload/UserUploadRequest';
 
-const { height, width } = Dimensions.get("screen");
+const { height, width } = Dimensions.get("window");
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+// Calculate responsive sizes
+const getResponsiveSizes = () => {
+    const tabBarHeight = Platform.OS === 'ios' 
+        ? Math.max(height * 0.09, 70) 
+        : Math.max(height * 0.08, 60);
+    
+    const tabBarPaddingBottom = Platform.OS === 'ios' ? 20 : 8;
+    const tabBarPaddingTop = 8;
+    
+    const iconSize = Math.min(width * 0.06, 28);
+    const textSize = Math.min(width * 0.03, 12);
+    
+    return {
+        tabBarHeight,
+        tabBarPaddingBottom,
+        tabBarPaddingTop,
+        iconSize,
+        textSize,
+        tabItemWidth: width * 0.18
+    };
+};
 
 const DrawerScreen = ({ navigation }) => {
     return (
@@ -82,25 +104,27 @@ const BottomTabBar = () => {
     const theme = useSelector((state) => state.theme);
     const customClaims = useSelector((state) => state.bootReducer.customClaims);
     
-  const {photoURL} = useSelector((state) => state.bootReducer.userInfo)|| "";
+    const {photoURL} = useSelector((state) => state.bootReducer.userInfo)|| "";
+    
+    const responsiveSizes = getResponsiveSizes();
 
     const TabIcon = ({ focused, iconName, labelText }) => (
         <View style={{ 
             alignItems: 'center', 
             justifyContent: 'center', 
-            width: width * 0.18,
+            width: responsiveSizes.tabItemWidth,
             paddingVertical: 8
         }}>
             <Feather 
                 name={iconName} 
-                size={theme.sizes.iconMedium} 
+                size={focused ? responsiveSizes.iconSize : responsiveSizes.iconSize * 0.9} 
                 color={focused ? '#FF8181' : theme.colors.primaryText} 
                 style={{ marginBottom: focused ? 4 : 0 }} 
             />
             {focused ? (
                 <Text style={{ 
                     color: '#FF8181', 
-                    fontSize: theme.sizes.textSmall, 
+                    fontSize: responsiveSizes.textSize, 
                     fontWeight: '500',
                     textAlign: "center",
                     marginTop: 2
@@ -121,7 +145,7 @@ const BottomTabBar = () => {
                     headerShown: false,
                     tabBarStyle: {
                         position: "absolute",
-                        height: height * 0.09,
+                        height: responsiveSizes.tabBarHeight,
                         backgroundColor: theme.colors.quaternary,
                         borderTopLeftRadius: 30,
                         borderTopRightRadius: 30,
@@ -131,8 +155,8 @@ const BottomTabBar = () => {
                         right: 0,
                         overflow: "hidden",
                         borderTopWidth: 0,
-                        paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-                        paddingTop: 8,
+                        paddingBottom: responsiveSizes.tabBarPaddingBottom,
+                        paddingTop: responsiveSizes.tabBarPaddingTop,
                         shadowColor: '#000',
                         shadowOffset: {
                             width: 0,
@@ -174,12 +198,23 @@ const BottomTabBar = () => {
                     name={NavigationService.screens.Bookmark}
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <View style={{ alignItems: 'center', justifyContent: 'center', width: width * 0.23 }}>
-                                <Fontisto name={focused ? 'bookmark-alt' : 'bookmark'} size={theme.sizes.iconMedium} color={focused ? '#FF8181' : theme.colors.primaryText} style={{
-                                    bottom: focused ? 3 : 0,
-                                }} />
+                            <View style={{ alignItems: 'center', justifyContent: 'center', width: responsiveSizes.tabItemWidth }}>
+                                <Fontisto 
+                                    name={focused ? 'bookmark-alt' : 'bookmark'} 
+                                    size={focused ? responsiveSizes.iconSize : responsiveSizes.iconSize * 0.9} 
+                                    color={focused ? '#FF8181' : theme.colors.primaryText} 
+                                    style={{
+                                        bottom: focused ? 3 : 0,
+                                    }} 
+                                />
                                 {
-                                    focused ? <Text style={{ color: '#FF8181', fontSize: 10, fontWeight: '400', textAlign: "center", bottom: 0 }}>Saved</Text> : null
+                                    focused ? <Text style={{ 
+                                        color: '#FF8181', 
+                                        fontSize: responsiveSizes.textSize, 
+                                        fontWeight: '400', 
+                                        textAlign: "center", 
+                                        bottom: 0 
+                                    }}>Saved</Text> : null
                                 }
                             </View>
                         ),
@@ -192,9 +227,20 @@ const BottomTabBar = () => {
                             name="Admin"
                             options={{
                                 tabBarIcon: ({ focused }) => (
-                                    <View style={{ alignItems: 'center', justifyContent: 'center', width: width * 0.23 }}>
-                                        <MaterialCommunityIcons name={"clipboard-edit-outline"} size={theme.sizes.iconMedium} color={focused ? '#FF8181' : theme.colors.primaryText} style={{ bottom: focused ? 3 : 0 }} />
-                                        {focused ? <Text style={{ color: '#FF8181', fontSize: theme.sizes.textSmall, fontWeight: '400', textAlign: "center", bottom: 0 }}>Requests</Text> : null}
+                                    <View style={{ alignItems: 'center', justifyContent: 'center', width: responsiveSizes.tabItemWidth }}>
+                                        <MaterialCommunityIcons 
+                                            name={"clipboard-edit-outline"} 
+                                            size={focused ? responsiveSizes.iconSize : responsiveSizes.iconSize * 0.9} 
+                                            color={focused ? '#FF8181' : theme.colors.primaryText} 
+                                            style={{ bottom: focused ? 3 : 0 }} 
+                                        />
+                                        {focused ? <Text style={{ 
+                                            color: '#FF8181', 
+                                            fontSize: responsiveSizes.textSize, 
+                                            fontWeight: '400', 
+                                            textAlign: "center", 
+                                            bottom: 0 
+                                        }}>Requests</Text> : null}
                                     </View>
                                 ),
                             }}
@@ -207,11 +253,22 @@ const BottomTabBar = () => {
                     name={NavigationService.screens.Profile}
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <View style={{ alignItems: 'center', justifyContent: 'center', width: width * 0.23 }}>
-                                <Avatar style={{ bottom: focused ? 3 : 0 }} source={{
-                                  uri: photoURL
-                                }} size={theme.sizes.iconMedium} alignSelf={'center'} />
-                                {focused ? <Text style={{ color: '#FF8181', fontSize: theme.sizes.textSmall, fontWeight: '400', textAlign: "center", bottom: 0 }}>Account</Text> : null}
+                            <View style={{ alignItems: 'center', justifyContent: 'center', width: responsiveSizes.tabItemWidth }}>
+                                <Avatar 
+                                    style={{ bottom: focused ? 3 : 0 }} 
+                                    source={{
+                                        uri: photoURL
+                                    }} 
+                                    size={focused ? responsiveSizes.iconSize : responsiveSizes.iconSize * 0.9} 
+                                    alignSelf={'center'} 
+                                />
+                                {focused ? <Text style={{ 
+                                    color: '#FF8181', 
+                                    fontSize: responsiveSizes.textSize, 
+                                    fontWeight: '400', 
+                                    textAlign: "center", 
+                                    bottom: 0 
+                                }}>Account</Text> : null}
                             </View>
                         ),
                     }}
@@ -409,8 +466,17 @@ const BootScreen = () => {
 
     if (initializing) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Loading...</Text>
+            <View style={{ 
+                flex: 1, 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                backgroundColor: '#6360FF'
+            }}>
+                <Text style={{
+                    fontSize: Math.min(width * 0.05, 18),
+                    color: '#FFFFFF',
+                    fontWeight: '600'
+                }}>Loading...</Text>
             </View>
         );
     }

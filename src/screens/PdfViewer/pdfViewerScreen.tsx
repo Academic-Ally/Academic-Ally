@@ -72,7 +72,7 @@ const PdfViewer = React.memo(() => {
   const styles = useMemo(() => createStyles(theme.colors, theme.sizes, landscape), [theme, potrait]);
   const [url, setUrl] = useState<any>(null);
   const mail = useSelector((state: any) => state?.bootReducer?.utilis);
-  const {max_init_per_day = 0, max_pages = 0, premium_max_init_per_day = 0, premium_max_pages = 0, mailTo = 'admin@getacademically.co', status = false } = useSelector((state: any) => state?.bootReducer?.utilis)?.pdfChat || {};
+  const {max_init_per_day = 0, max_pages = 0, premium_max_init_per_day = 0, premium_max_pages = 0, mailTo = 'syedaffan880@gmail.com', status = false } = useSelector((state: any) => state?.bootReducer?.utilis)?.pdfChat || {};
   const [maxPagesAllowed, setMaxPagesAllowed] = useState(max_pages);
   const [maxInitiationLimit, setMaxInitiationLimit] = useState(max_init_per_day);
 
@@ -213,7 +213,7 @@ const handleOpenEmail = () => {
         const documents = querySnapshot?.docs
           .map((doc) => {
             const data = doc.data();
-            const date = data.date.toDate();
+            const date = data?.date || data?.date?.toDate();
             return { ...data, date, docId: doc.id }; 
           })
           .sort((a, b) => b.date - a.date);

@@ -160,7 +160,7 @@ const NotesCard = React.memo(({ item, userData, notesData, selected, subject, se
   }
 
   async function mail() {
-    Linking.openURL(`mailto:support@getacademically.co?body=Report for notes Id : ${item.id}, ${userData.Course} ${userData.Branch}, Semester ${item.sem} ${selected.charAt(0).toUpperCase() + selected.slice(1)} of ${subject}  `)
+    Linking.openURL(`mailto:academicly.app@gmail.com?body=Report for notes Id : ${item.id}, ${userData.Course} ${userData.Branch}, Semester ${item.sem} ${selected.charAt(0).toUpperCase() + selected.slice(1)} of ${subject}  `)
   }
 
   const handleSharePdf = async () => {

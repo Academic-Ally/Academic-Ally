@@ -13,7 +13,7 @@ const createStyles = (theme:any, sizes:any) =>
             alignItems: 'center',
             position: 'relative',
             shadowColor: "#161719",
-            top: -height * 0.09,
+            top: -height * 0.04,
             zIndex: 1,
             alignSelf: "center",
             //box elements should not get cut off
@@ -22,7 +22,7 @@ const createStyles = (theme:any, sizes:any) =>
         itemContainer: {
             width: width / 5,
             height: width * 0.2 ,
-            flexDirection: "column",
+            flexDirection: "column",                 
             justifyContent: 'space-between',
             alignItems: 'center',
         },
@@ -37,7 +37,8 @@ const createStyles = (theme:any, sizes:any) =>
         iconLabel: {
             color: theme.terinaryText,
             fontSize: sizes.textSmall,
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            fontFamily: 'DMSans-Regular'
         },
         notesIconContainer: {
             width: '70%',

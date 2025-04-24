@@ -1,4 +1,0 @@
-JvmtiExport can_access_local_variables 180
-JvmtiExport can_hotswap_or_post_breakpoint 0
-JvmtiExport can_post_on_exceptions 55
-# 373677120 ciObject found

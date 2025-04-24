@@ -129,6 +129,7 @@ const ChatScreen  = React.memo(({open, close, docId, choosenDoc}: Props) => {
       setMessageText("")
         PdfViewerAction.chatWithPdf(docId, messageText, uid).then((res)=>{
           if(!res){
+            console.log("res", res)
             close()
             Toast.show({
               title: 'Error: PDF Text Recognition',

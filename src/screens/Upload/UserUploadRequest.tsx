@@ -13,18 +13,22 @@ import UserRequestsActions from '../UserRequests/UserRequestsActions';
 const UserUploadRequestsScreen = () => {
     const dispatch = useDispatch();
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const UserRequests = useSelector((state) => state.UserRequestsReducer);
-    const loadingRequests = useSelector((state) => state.UserRequestsReducer).loadingRequests;
-    const theme = useSelector((state) => state.theme);
+    const UserRequests = useSelector((state: any) => state.UserRequestsReducer);
+    const loadingRequests = useSelector((state: any) => state.UserRequestsReducer).loadingRequests;
+    const theme = useSelector((state: any) => state.theme);
     const styles = useMemo(() => createStyles(theme.colors, theme.sizes), [theme]);
-    const customClaims = useSelector((state) => state.bootReducer.customClaims);
+    const customClaims = useSelector((state: any) => state.bootReducer.customClaims);
     const managerUniversity = customClaims?.branchManagerDetails?.university;
     const managerCourse = customClaims?.branchManagerDetails?.course;
     const managerBranch = customClaims?.branchManagerDetails?.branches;
 
     const handleRefresh = () => {
         setIsRefreshing(true);
-        dispatch(UserRequestsActions.loadNewUploads(managerUniversity, managerCourse, managerBranch)).then(() => setIsRefreshing(false));
+        // dispatch(UserRequestsActions.loadNewUploads(managerUniversity,
+        //      managerCourse,
+        //      managerBranch
+        //fix linter error
+        dispatch(UserRequestsActions.loadNewUploads(managerUniversity, managerCourse, managerBranch) as any).then(() => setIsRefreshing(false));
     };
 
     useEffect(() => {
@@ -37,7 +41,7 @@ const UserUploadRequestsScreen = () => {
         }
     }, [UserRequests.loading]);
 
-    const renderItem = ({ item, index }) => (
+    const renderItem = ({ item, index }: { item: any, index: number }) => (
         <NewRequestCard item={item} index={index} />
     );
     return (

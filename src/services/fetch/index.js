@@ -354,33 +354,46 @@ async function requestPermisssion() {
 }
 
 export const getFcmToken = async () => {
-  let fcmToken = await AsyncStorage.getItem('fcmToken');
-  console.log(fcmToken)
-  request(PERMISSIONS.ANDROID.POST_NOTIFICATIONS)
-  await requestPermisssion();
-  if (!fcmToken) {
-    await requestPermisssion();
-    fcmToken = await messaging().getToken();
-    if (fcmToken) {
-      await AsyncStorage.setItem('fcmToken', fcmToken);
-      await firestore()
-        .collection('Users')
-        .doc(auth().currentUser?.uid)
-        .update({
-          fcmToken: fcmToken,
-        })
-        .catch(error => {
-          console.log("Error getting document:", error);
+  try {
+    let fcmToken = await AsyncStorage.getItem('fcmToken');
+    
+    // Only request notifications permission if needed
+    if (!fcmToken) {
+      await requestPermisssion();
+      fcmToken = await messaging().getToken();
+      
+      if (fcmToken && auth().currentUser?.uid) {
+        await AsyncStorage.setItem('fcmToken', fcmToken);
+        
+        try {
+          await firestore()
+            .collection('Users')
+            .doc(auth().currentUser.uid)
+            .update({
+              fcmToken: fcmToken,
+            });
+        } catch (error) {
+          console.log("Error updating FCM token:", error);
         }
-        );
+      }
     }
+    return fcmToken;
+  } catch (error) {
+    console.error("Error in getFcmToken:", error);
+    return null;
   }
-  return fcmToken;
 }
 
 export const NotificationListner = async () => {
-  const unsubscribe = messaging().onMessage(async remoteMessage => {
-    Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
-  });
-  return unsubscribe;
+  try {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      if (remoteMessage) {
+        Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+      }
+    });
+    return unsubscribe;
+  } catch (error) {
+    console.error("Error in NotificationListner:", error);
+    return () => {};
+  }
 }

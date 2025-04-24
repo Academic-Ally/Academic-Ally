@@ -4,17 +4,23 @@ class FirebaseService {
     constructor() { }
 
     static parseMessage(message) {
-        console.log(message);
+        if (message) {
+            console.log(message);
+        }
     }
 
-    static requestUserPermission() {
-        messaging()
-            .requestPermission()
-            .then(authStatus => {
-                const enabled =
-                    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-            });
+    static async requestUserPermission() {
+        try {
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+            
+            return enabled;
+        } catch (error) {
+            console.error('Error requesting permission:', error);
+            return false;
+        }
     }
 }
 export default FirebaseService;

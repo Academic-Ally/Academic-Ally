@@ -18,7 +18,7 @@ const PrivacyPolicy = () => {
       <View style={styles.body}>
         <View style={styles.bodyContent}>
           <Text style={styles.title}>Privacy Policy</Text>
-          <Text style={styles.subTitle}>Last updated: 2023-03-03</Text>
+          <Text style={styles.subTitle}>Last updated: 2025-05-18</Text>
           <View style={styles.content}>
             <Text style={styles.normalText}>
               Academic Ally built the Academic Ally app as a Free app. This
@@ -154,7 +154,7 @@ const PrivacyPolicy = () => {
               this page.
             </Text>
             <Text style={styles.label}>
-              This policy is effective as of 2023-03-03
+              This policy is effective as of 2025-05-18
             </Text>
           </View>
         </View>

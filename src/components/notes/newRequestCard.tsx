@@ -79,16 +79,39 @@ const   NewRequestCard = ({ item }: any) => {
     };
 
     const approved = () => {
-        getDownloadUrl(item?.path).then((url) => {
-            dispatch(UserRequestsActions.acceptRequest(editedData, url, credentials, handleRefresh, dynamicLink)).then(() => {
+        getDownloadUrl(item?.path).then(async (url) => {
+            try {
+                // First proceed with the approval
+                await dispatch((UserRequestsActions as any).acceptRequest(editedData, url, credentials, handleRefresh, dynamicLink));
+                
+                // After successful approval, send notification
+                const notificationPayload = {
+                    topic: `${item.university}_${item.course}_${item.branch}_${item.sem}`,
+                    // topic: "Testing123",
+                    subjectName: item.subject,
+                    resourceType: item.category,
+                    userId: item.uploaderId,
+                    resourceTitle: item.name
+                };
+                await fetch('https://academicallyapp.netlify.app/.netlify/functions/notifications/resource-accepted', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(notificationPayload)
+                });
+
                 setApprovalModalVisible(false);
-            });
+            } catch (error) {
+                console.error('Error:', error);
+                setApprovalModalVisible(false);
+            }
         })
     }
 
     const rejected = () => {
         setLoading(true)
-        dispatch(UserRequestsActions.rejectRequest(data, handleRefresh, userInfo)).then(() => {
+        dispatch((UserRequestsActions as any).rejectRequest(data, handleRefresh, userInfo)).then(() => {
             setRejectionModalVisible(false);
         });
     }

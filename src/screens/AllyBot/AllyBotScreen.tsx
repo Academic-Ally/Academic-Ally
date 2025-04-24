@@ -4,7 +4,7 @@ import LottieView from 'lottie-react-native';
 import { Box, Divider, Icon, IconButton, Modal, Stack, Text } from 'native-base'
 import { fillAndStroke } from 'pdf-lib';
 import React, { useEffect, useMemo, useState } from 'react'
-import { FlatList, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { FlatList, ScrollView, StyleSheet, TouchableOpacity, View, Dimensions } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -13,6 +13,8 @@ import AllyChatBot from '../../sections/PdfViewer/AllyChatBot/AllyChatBot'
 import UtilityService from '../../services/UtilityService'
 
 type Props = {}
+
+const { width, height } = Dimensions.get('window');
 
 const AllyBotScreen = (props: Props) => {
   const {uid}: any = useSelector((state: any)=> state.bootReducer.userInfo);
@@ -24,9 +26,13 @@ const AllyBotScreen = (props: Props) => {
   const [choosenDoc, setchoosenDoc] = useState(null)
   const [docId, setDocId] = useState(null)
   const [deleteChatId, setDeleteChatId] = useState(null)
+  
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   useEffect(()=>{
     dispatch(AllyBotActions.loadInitiatedChats(uid));
   },[])
+  
   const getTimeAgo = (date1: any, date2: any) => {
     const timeDifference = Math.abs(date1 - date2);
     return formatDistanceToNow(date1, { addSuffix: true });
@@ -35,7 +41,7 @@ const AllyBotScreen = (props: Props) => {
   const renderItems = (item: any, index: any) => {
     return (
       <>
-        <TouchableOpacity key={index} style={{ padding: 10, flexDirection: 'row', width: theme.sizes.width, justifyContent:'space-between', borderRadius: 15, marginHorizontal:5, marginVertical: 7, }} 
+        <TouchableOpacity key={index} style={styles.chatItem} 
         onPress={()=>{
           setDocId(item.docId);
           setchoosenDoc(item);
@@ -47,12 +53,12 @@ const AllyBotScreen = (props: Props) => {
                 <Text fontWeight={'bold'} color={theme.colors.primaryText} >{(UtilityService.removeString(item?.name)).slice(0,25)}</Text>
                 <Text color={theme.colors.terinaryText} >
                   {
-                    item.lastConversation.date !== null ? (getTimeAgo(new Date(item.lastConversation.date.seconds * 1000 + item.lastConversation.date.nanoseconds / 1000000), new Date())).replace('about'," "): null
+                    item.lastConversation.date !== null && item.lastConversation.date.seconds ? (getTimeAgo(new Date(item.lastConversation.date.seconds * 1000 + item.lastConversation.date.nanoseconds / 1000000), new Date())).replace('about'," "): null
                   }
                 </Text>
             </Box>
             <Box flexDirection={'row'} justifyContent={'space-between'} paddingRight={2} alignItems={'center'} >
-                <Text color={theme.colors.terinaryText}>{(item?.lastConversation.message).slice(0,30) + '....'}</Text>
+                <Text color={theme.colors.terinaryText} fontSize={theme.sizes.textSmall} numberOfLines={1} ellipsizeMode="tail">{(item?.lastConversation.message).slice(0,30) + '....'}</Text>
                 <IconButton
                   borderRadius={'full'}
                   _hover={{
@@ -73,16 +79,11 @@ const AllyBotScreen = (props: Props) => {
                 }} size={'md'}>
                     <Modal.Content >
                         <Box margin={2} >
-                            <Text fontSize={'14px'} fontWeight={'700'} marginTop={3} marginX={3} textAlign="center" >
+                            <Text fontSize={theme.sizes.subtitle} fontWeight={'700'} marginTop={3} marginX={3} textAlign="center" >
                               Are you sure you want to delete this chat?
                             </Text>
                             <Stack direction="row" space={2} marginY={5} alignItems="center" justifyContent="space-evenly" >  
-                              <TouchableOpacity style={{
-                                    backgroundColor: theme.colors.primary,
-                                    borderRadius: 10,
-                                    paddingHorizontal: theme.sizes.width * 0.06,
-                                    paddingVertical: 10,
-                                }} onPress={()=>{
+                              <TouchableOpacity style={styles.cancelButton} onPress={()=>{
                                   setConfirmDelete(false)
                                 }} >
                                     <Text fontSize={theme.sizes.subtitle} fontWeight={'600'} textAlign="center" color={"#F1F1FA"} >
@@ -106,26 +107,16 @@ const AllyBotScreen = (props: Props) => {
   }
   const ListEmptyComponent = React.memo(() => (
     <View
-      style={{
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
+      style={styles.emptyContainer}
     >
       <LottieView
-        style={{
-          height: theme.sizes.lottieIconHeight,
-          alignSelf: 'center',
-        }}
+        style={styles.lottieView}
         source={require('../../assets/lottie/NoBookMarks.json')}
         autoPlay
         loop
       />
       <Text
-        style={{
-          fontSize: theme.sizes.title,
-          color: theme.colors.primaryText,
-          fontWeight: 'bold',
-        }}
+        style={styles.emptyText}
       >
         No Recent pdf's
       </Text>
@@ -135,9 +126,7 @@ const AllyBotScreen = (props: Props) => {
   return (
     <MainScreenLayout rightIconFalse={true} title={'AllyBot'} handleScroll={() => { }} name="AllyBot" >
       <FlatList
-        style={{
-          marginTop: 5,
-        }}
+        style={styles.flatList}
         showsVerticalScrollIndicator={false}
         data={InitiatedChats}
         renderItem={({item, index}: any) => renderItems(item, index)}
@@ -160,6 +149,38 @@ const AllyBotScreen = (props: Props) => {
   )
 }
 
-export default AllyBotScreen
+const createStyles = (theme: any) => StyleSheet.create({
+  flatList: {
+    marginTop: 5,
+  },
+  chatItem: {
+    padding: 10, 
+    flexDirection: 'row', 
+    width: '95%', 
+    justifyContent: 'space-between', 
+    borderRadius: 15, 
+    marginHorizontal: width * 0.025, 
+    marginVertical: 7,
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: width * 0.06,
+    paddingVertical: 10,
+  },
+  emptyContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lottieView: {
+    height: theme.sizes.lottieIconHeight,
+    alignSelf: 'center',
+  },
+  emptyText: {
+    fontSize: theme.sizes.title,
+    color: theme.colors.primaryText,
+    fontWeight: 'bold',
+  }
+});
 
-const styles = StyleSheet.create({})
+export default AllyBotScreen

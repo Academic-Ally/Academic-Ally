@@ -17,7 +17,7 @@ const ReportActionSheet = ({ isOpen, onClose, notesData }: any) => {
     const userFirestoreData = useSelector((state: any) => state.usersData);
 
     async function mail() {
-        Linking.openURL(`mailto:support@getacademically.co?body=Report for notes Id : ${notesData?.id}, ${notesData?.course} ${notesData?.branch}, Semester ${notesData.sem} ${(notesData?.category).charAt(0).toUpperCase() + (notesData?.category).slice(1)} of ${notesData?.subject}  `)
+        Linking.openURL(`mailto:academicly.app@gmail.com?body=Report for notes Id : ${notesData?.id}, ${notesData?.course} ${notesData?.branch}, Semester ${notesData.sem} ${(notesData?.category).charAt(0).toUpperCase() + (notesData?.category).slice(1)} of ${notesData?.subject}  `)
     }
     return (
         <Center>

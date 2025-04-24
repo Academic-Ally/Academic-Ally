@@ -142,7 +142,7 @@ const Profile = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    Linking.openURL('mailto:contact@getacademically.co')
+                    Linking.openURL('mailto:academicly.app@gmail.com')
                   }}
                   style={styles.settingsContainer}>
                   <Text style={styles.settingsText}>Get in Touch</Text>
