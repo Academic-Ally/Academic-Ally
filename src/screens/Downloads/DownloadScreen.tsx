@@ -315,7 +315,7 @@ const DownloadScreen = () => {
         width: '95%',
 
       }}>
-        {UtilityService.formatDate(itemGroup[0]?.downloadedDate, 'MMM dd, yyyy')}
+        {UtilityService?.formatDate(itemGroup[0]?.downloadedDate, 'MMM dd, yyyy')}
       </Text>
       <FlatList
         data={itemGroup}

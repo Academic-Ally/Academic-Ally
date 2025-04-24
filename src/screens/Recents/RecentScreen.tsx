@@ -26,7 +26,7 @@ const RecentScreen = () => {
   const [data, setData] = useState(recentsList)
   const [searchTerm, setSearchTerm] = useState('');
   const [sortedArray, setSortedArray] = useState<any>([])
-
+  // console.log(recentsList)
   const groupByDate = (array: any) => {
     if(array?.length > 0){
       const groupedArray: any = {};
