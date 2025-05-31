@@ -1,9 +1,11 @@
 buildscript {
     ext {
-        buildToolsVersion = "34.0.0"
-        minSdkVersion = 26
-        compileSdkVersion = 34
-        targetSdkVersion = 34
+        buildToolsVersion = "33.0.0"
+        minSdkVersion = 21
+        compileSdkVersion = 33
+        targetSdkVersion = 33
+        ndkVersion = "23.1.7779620"
+        kotlinVersion = "1.6.0"
 
         if (System.properties['os.arch'] == "aarch64") {
             // For M1 Users we need to use the NDK 24 which added support for aarch64
@@ -18,13 +20,13 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.4.2")
-        classpath 'com.google.gms:google-services:4.3.13'
-        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("com.android.tools.build:gradle:7.3.1")
+        classpath("com.facebook.react:react-native-gradle-plugin:0.71.11")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.0")
+        classpath("com.google.gms:google-services:4.4.0")
+        classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
         classpath("de.undercouch:gradle-download-task:5.0.1")
-
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.8.1'
-        classpath 'com.google.firebase:firebase-bom:32.1.1'
+        classpath 'com.google.firebase:firebase-bom:32.7.2'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

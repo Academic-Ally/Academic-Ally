@@ -144,6 +144,16 @@ android {
         manifestPlaceholders = [
             notificationPolicyPermission: "android.permission.ACCESS_NOTIFICATION_POLICY"
         ]
+        
+        // Restrict to phones only
+        manifestPlaceholders += [
+            supportsCar: "false",
+            supportsChromebook: "false",
+            supportsPhone: "true",
+            supportsTablet: "false",
+            supportsTv: "false"
+        ]
+        
         if (isNewArchitectureEnabled()) {
             // We configure the CMake build only if you decide to opt-in for the New Architecture.
             externalNativeBuild {
@@ -275,6 +285,10 @@ android {
 
         }
     }
+
+    buildFeatures {
+        buildConfig true
+    }
 }
 
 dependencies {
@@ -310,7 +324,7 @@ dependencies {
         implementation jscFlavor
     }
     implementation 'com.google.firebase:firebase-auth'
-    implementation platform('com.google.firebase:firebase-bom:31.2.3')
+    implementation platform('com.google.firebase:firebase-bom:32.7.2')
     implementation project(":@react-native-firebase_inAppMessaging")
     implementation 'com.google.firebase:firebase-analytics'
     // implementation project(':react-native-push-notification')

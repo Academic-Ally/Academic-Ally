@@ -361,15 +361,21 @@ const BootScreen = () => {
     };
 
     useEffect(() => {
+        console.log('Starting initialization...');
         try {
+            console.log('Loading utils...');
             dispatch(BootActions.loadUtils(currentUser));
+            console.log('Loading user claims...');
             dispatch(BootActions.loadUserCustomClaims(currentUser));
+            console.log('Loading protected utils...');
             dispatch(BootActions.loadProtectedUtils())
+            console.log('All initialization complete');
         }
         catch (e) {
             console.log('Initialization error', e)
         }
         finally {
+            console.log('Setting initializing to false');
             setInitializing(false)
         }
     }, [currentUser, user]);

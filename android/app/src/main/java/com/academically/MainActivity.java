@@ -13,6 +13,9 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import com.zoontek.rnbootsplash.RNBootSplash;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends ReactActivity {
 
@@ -77,6 +80,14 @@ public void onRequestPermissionsResult(int requestCode, @NonNull String[] permis
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    // Enable edge-to-edge display
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    
+    // Configure the window insets
+    WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+    windowInsetsController.setAppearanceLightStatusBars(true);
+    windowInsetsController.setAppearanceLightNavigationBars(true);
+    
     checkAndRequestPermissions();
     RNBootSplash.init(this);
     super.onCreate(savedInstanceState);
