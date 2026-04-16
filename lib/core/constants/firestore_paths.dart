@@ -1,0 +1,87 @@
+/// Centralized Firestore collection/document path helpers.
+class FirestorePaths {
+  // Users
+  static String users() => 'Users';
+  static String user(String uid) => 'Users/$uid';
+  static String userBookmarks(String uid) => 'Users/$uid/NotesBookmarked';
+  static String userBookmark(String uid, String noteId) =>
+      'Users/$uid/NotesBookmarked/$noteId';
+  static String userUploads(String uid) => 'Users/$uid/UserUploads';
+  static String userUpload(String uid, String uploadId) =>
+      'Users/$uid/UserUploads/$uploadId';
+  static String userRatedList(String uid) => 'Users/$uid/RatedList';
+  static String userInitializedPdfs(String uid) =>
+      'Users/$uid/InitializedPdf';
+  static String userInitializedPdf(String uid, String docId) =>
+      'Users/$uid/InitializedPdf/$docId';
+  static String userSeekHubRequests(String uid) =>
+      'Users/$uid/SeekHub/Requests';
+
+  // Universities → Resources
+  static String universityBase(
+    String university,
+    String course,
+    String branch,
+    String sem,
+  ) =>
+      'Universities/$university/$course/$branch/$sem';
+
+  static String subjectsList(
+    String university,
+    String course,
+    String branch,
+    String sem,
+  ) =>
+      'Universities/$university/$course/$branch/$sem/SubjectsList';
+
+  static String resources(
+    String university,
+    String course,
+    String branch,
+    String sem,
+    String resourceType,
+    String subject,
+  ) =>
+      'Universities/$university/$course/$branch/$sem/$resourceType/$subject';
+
+  // QueryList (for search/recommendations)
+  static String queryList(String university, String course) =>
+      'QueryList/$university/$course/SubjectsListDetail';
+
+  // SeekHub
+  static String seekHub(String university, String course) =>
+      'SeekHub/$university/$course';
+  static String seekHubRequest(
+    String university,
+    String course,
+    String requestId,
+  ) =>
+      'SeekHub/$university/$course/$requestId';
+
+  // NewUploads
+  static String newUploads(
+    String university,
+    String course,
+    String branch,
+  ) =>
+      'NewUploads/$university/$course/$branch/uploads';
+
+  // Utils
+  static String utilsMetadata() => 'utils/meta-data';
+  static String utilsProtectedMetadata() => 'UtilsProtected/meta-data';
+
+  // Immutable user data
+  static String immutableUserData(String uid) => 'ImmutableUserData/$uid';
+
+  // Premium users
+  static String premiumUser(String userId) => 'Premium_Users/$userId';
+
+  // Notification topic format
+  static String notificationTopic(
+    String university,
+    String course,
+    String branch,
+    String sem,
+  ) =>
+      '${university}_${course}_${branch}_$sem';
+}
