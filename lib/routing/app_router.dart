@@ -9,6 +9,9 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
 import '../features/gen_ui/screens/gen_ui_screen.dart';
+import '../features/jobs/screens/job_detail_screen.dart';
+import '../features/jobs/screens/jobs_screen.dart';
+import '../features/jobs/screens/post_job_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/project_copilot/screens/create_project_screen.dart';
 import '../features/project_copilot/screens/project_copilot_screen.dart';
@@ -257,6 +260,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ProjectDetailScreen(
           projectId: state.pathParameters['projectId']!,
         ),
+      ),
+      GoRoute(
+        path: '/jobs',
+        builder: (context, state) => const JobsScreen(),
+      ),
+      GoRoute(
+        path: '/jobs/post',
+        builder: (context, state) => const PostJobScreen(),
+      ),
+      GoRoute(
+        path: '/jobs/:jobId',
+        builder: (context, state) =>
+            JobDetailScreen(jobId: state.pathParameters['jobId']!),
       ),
     ],
   );

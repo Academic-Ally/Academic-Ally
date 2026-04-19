@@ -121,6 +121,10 @@ class FirestorePaths {
   static String userProject(String uid, String projectId) =>
       'Users/$uid/Projects/$projectId';
 
+  // Jobs (shared, Phase 3)
+  static String jobs() => 'Jobs';
+  static String job(String jobId) => 'Jobs/$jobId';
+
   // Knowledge Graph (admin-curated topic nodes, Phase 2 design)
   static String knowledgeGraphNodes(
     String university,

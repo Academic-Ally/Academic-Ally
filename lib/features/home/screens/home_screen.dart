@@ -262,6 +262,49 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 24),
 
+                          // Explore section (Phase 3 features)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.explore,
+                                    size: 18, color: AppTheme.primaryColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Explore',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF161719),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 110,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              children: [
+                                _AiToolCard(
+                                  icon: Icons.work_outline,
+                                  title: 'Jobs & Interns',
+                                  subtitle: 'Career openings',
+                                  color: const Color(0xFF0277BD),
+                                  onTap: () => context.push('/jobs'),
+                                ),
+                                // Communities + Marketplace cards
+                                // land here as Phase 3 ships.
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
                           // Recommended section
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
