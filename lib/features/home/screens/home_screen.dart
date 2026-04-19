@@ -242,8 +242,15 @@ class HomeScreen extends ConsumerWidget {
                                   onTap: () =>
                                       context.push('/pyq-analyzer'),
                                 ),
+                                _AiToolCard(
+                                  icon: Icons.camera_alt,
+                                  title: 'Snap a Doubt',
+                                  subtitle: 'Photo → step-by-step',
+                                  color: const Color(0xFFE91E63),
+                                  onTap: () => context.push('/snap-doubt'),
+                                ),
                                 // More cards land here as Phase 2 ships
-                                // (Snap-a-Doubt, Project Copilot).
+                                // (Project Copilot).
                               ],
                             ),
                           ),

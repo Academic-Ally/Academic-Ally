@@ -11,6 +11,7 @@ import '../features/auth/screens/signup_screen.dart';
 import '../features/gen_ui/screens/gen_ui_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/pyq_analyzer/screens/pyq_analyzer_screen.dart';
+import '../features/snap_doubt/screens/snap_doubt_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/study_planner/screens/create_study_plan_screen.dart';
@@ -235,6 +236,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/pyq-analyzer',
         builder: (context, state) => const PyqAnalyzerScreen(),
+      ),
+      GoRoute(
+        path: '/snap-doubt',
+        builder: (context, state) => const SnapDoubtScreen(),
       ),
     ],
   );

@@ -31,6 +31,7 @@ class DeepLinkService {
     '/study-planner',
     '/gen-ui',
     '/pyq-analyzer',
+    '/snap-doubt',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.
