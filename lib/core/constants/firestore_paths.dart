@@ -86,6 +86,31 @@ class FirestorePaths {
   ) =>
       'userReports/$university/$course/$branch/$sem/$uid';
 
+  // Misconception Graph / Mastery (per-user, Phase 2)
+  static String userMisconceptions(String uid) =>
+      'Users/$uid/Misconceptions';
+  static String userMisconception(String uid, String nodeId) =>
+      'Users/$uid/Misconceptions/$nodeId';
+  static String userMasteryScores(String uid) =>
+      'Users/$uid/MasteryScores';
+  static String userMasteryScore(String uid, String nodeId) =>
+      'Users/$uid/MasteryScores/$nodeId';
+
+  // Knowledge Graph (admin-curated topic nodes, Phase 2 design)
+  static String knowledgeGraphNodes(
+    String university,
+    String course,
+    String subject,
+  ) =>
+      'KnowledgeGraph/$university/$course/$subject/nodes';
+  static String knowledgeGraphNode(
+    String university,
+    String course,
+    String subject,
+    String nodeId,
+  ) =>
+      'KnowledgeGraph/$university/$course/$subject/nodes/$nodeId';
+
   // Notification topic format
   static String notificationTopic(
     String university,
