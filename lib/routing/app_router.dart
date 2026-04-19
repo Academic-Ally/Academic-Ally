@@ -11,6 +11,9 @@ import '../features/auth/screens/signup_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
+import '../features/study_planner/screens/create_study_plan_screen.dart';
+import '../features/study_planner/screens/study_plan_detail_screen.dart';
+import '../features/study_planner/screens/study_planner_screen.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/downloads/screens/downloads_screen.dart';
 import '../features/home/screens/home_screen.dart';
@@ -208,6 +211,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/knowledge-map',
         builder: (context, state) => const KnowledgeMapScreen(),
+      ),
+      GoRoute(
+        path: '/study-planner',
+        builder: (context, state) => const StudyPlannerScreen(),
+      ),
+      GoRoute(
+        path: '/study-planner/create',
+        builder: (context, state) => const CreateStudyPlanScreen(),
+      ),
+      GoRoute(
+        path: '/study-planner/:planId',
+        builder: (context, state) => StudyPlanDetailScreen(
+          planId: state.pathParameters['planId']!,
+        ),
       ),
     ],
   );

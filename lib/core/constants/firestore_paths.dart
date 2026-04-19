@@ -96,6 +96,31 @@ class FirestorePaths {
   static String userMasteryScore(String uid, String nodeId) =>
       'Users/$uid/MasteryScores/$nodeId';
 
+  // Study Planner (per-user, Phase 2)
+  static String userStudyPlans(String uid) => 'Users/$uid/StudyPlans';
+  static String userStudyPlan(String uid, String planId) =>
+      'Users/$uid/StudyPlans/$planId';
+
+  // PYQ Analysis (shared across users, Phase 2)
+  static String pyqAnalysis(
+    String university,
+    String course,
+    String branch,
+    String sem,
+    String subject,
+  ) =>
+      'PyqAnalysis/$university/$course/$branch/$sem/$subject';
+
+  // Doubt history (per-user, Phase 2)
+  static String userDoubtHistory(String uid) => 'Users/$uid/DoubtHistory';
+  static String userDoubt(String uid, String doubtId) =>
+      'Users/$uid/DoubtHistory/$doubtId';
+
+  // Project Copilot (per-user, Phase 2)
+  static String userProjects(String uid) => 'Users/$uid/Projects';
+  static String userProject(String uid, String projectId) =>
+      'Users/$uid/Projects/$projectId';
+
   // Knowledge Graph (admin-curated topic nodes, Phase 2 design)
   static String knowledgeGraphNodes(
     String university,
