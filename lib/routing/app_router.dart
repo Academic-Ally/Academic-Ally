@@ -8,6 +8,7 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/downloads/screens/downloads_screen.dart';
@@ -36,12 +37,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggedIn = authState.value != null;
       final isSplash = state.matchedLocation == '/splash';
+      final isOnboarding = state.matchedLocation == '/onboarding';
       final isAuthRoute = state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup' ||
           state.matchedLocation == '/forgot-password';
 
-      // Let splash screen show without redirect
-      if (isSplash) return null;
+      // Let splash + onboarding show without redirect
+      if (isSplash || isOnboarding) return null;
       if (!isLoggedIn && !isAuthRoute) return '/login';
       if (isLoggedIn && isAuthRoute) return '/home';
       return null;
@@ -51,6 +53,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+
+      // Onboarding (first-launch only)
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
 
       // Auth routes (no bottom nav)

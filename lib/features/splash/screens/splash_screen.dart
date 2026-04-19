@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../config/theme.dart';
+import '../../../core/constants/app_constants.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -62,16 +64,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
     _textController.forward();
 
-    // Wait for animation to play, then navigate based on auth state
+    // Wait for animation to play, then route based on auth + onboarding state
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       context.go('/home');
-    } else {
-      context.go('/login');
+      return;
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    final introShown = prefs.getBool(AppConstants.introShownKey) ?? false;
+    if (!mounted) return;
+
+    context.go(introShown ? '/login' : '/onboarding');
   }
 
   @override
