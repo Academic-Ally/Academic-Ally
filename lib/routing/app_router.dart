@@ -8,6 +8,7 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
@@ -203,6 +204,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/update-profile',
         builder: (context, state) => const UpdateProfileScreen(),
+      ),
+      GoRoute(
+        path: '/knowledge-map',
+        builder: (context, state) => const KnowledgeMapScreen(),
       ),
     ],
   );

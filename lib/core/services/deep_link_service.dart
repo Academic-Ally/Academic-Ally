@@ -27,6 +27,7 @@ class DeepLinkService {
     '/seekhub',
     '/recents',
     '/downloads',
+    '/knowledge-map',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.
