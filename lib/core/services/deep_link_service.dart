@@ -29,6 +29,7 @@ class DeepLinkService {
     '/downloads',
     '/knowledge-map',
     '/study-planner',
+    '/gen-ui',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.

@@ -8,6 +8,7 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/gen_ui/screens/gen_ui_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
@@ -225,6 +226,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => StudyPlanDetailScreen(
           planId: state.pathParameters['planId']!,
         ),
+      ),
+      GoRoute(
+        path: '/gen-ui',
+        builder: (context, state) => const GenUiScreen(),
       ),
     ],
   );

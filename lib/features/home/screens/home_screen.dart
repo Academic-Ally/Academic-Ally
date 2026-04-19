@@ -227,9 +227,15 @@ class HomeScreen extends ConsumerWidget {
                                   color: AppTheme.tertiaryColor,
                                   onTap: () => context.push('/study-planner'),
                                 ),
+                                _AiToolCard(
+                                  icon: Icons.widgets_outlined,
+                                  title: 'Gen UI',
+                                  subtitle: 'AI picks the layout',
+                                  color: const Color(0xFF9C27B0),
+                                  onTap: () => context.push('/gen-ui'),
+                                ),
                                 // More cards land here as Phase 2 ships
-                                // (PYQ Analyzer, Snap-a-Doubt,
-                                // Project Copilot, Gen UI).
+                                // (PYQ Analyzer, Snap-a-Doubt, Project Copilot).
                               ],
                             ),
                           ),
