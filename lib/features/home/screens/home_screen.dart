@@ -234,8 +234,16 @@ class HomeScreen extends ConsumerWidget {
                                   color: const Color(0xFF9C27B0),
                                   onTap: () => context.push('/gen-ui'),
                                 ),
+                                _AiToolCard(
+                                  icon: Icons.find_in_page,
+                                  title: 'PYQ Analyzer',
+                                  subtitle: 'Predict likely questions',
+                                  color: const Color(0xFF2E7D32),
+                                  onTap: () =>
+                                      context.push('/pyq-analyzer'),
+                                ),
                                 // More cards land here as Phase 2 ships
-                                // (PYQ Analyzer, Snap-a-Doubt, Project Copilot).
+                                // (Snap-a-Doubt, Project Copilot).
                               ],
                             ),
                           ),
