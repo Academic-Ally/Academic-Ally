@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Minimum-viable Storage rules for demo phase.
+//
+// Blocks unauthenticated randos from using the bucket as a free file host,
+// but still permissive for any logged-in user (matches the Firestore pattern).
+// Phase 4 hardening will add path-scoped ownership (users only write to their
+// own uid prefix), MIME type validation, and size limits.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
