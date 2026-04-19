@@ -1,0 +1,19 @@
+{
+  "name": "academic-ally-functions",
+  "description": "Cloud Functions for academic-ally-app — billing hard-cap today, more to come.",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.0.0",
+    "@google-cloud/billing": "^4.4.0"
+  }
+}
