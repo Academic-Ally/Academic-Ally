@@ -10,6 +10,9 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
 import '../features/gen_ui/screens/gen_ui_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
+import '../features/project_copilot/screens/create_project_screen.dart';
+import '../features/project_copilot/screens/project_copilot_screen.dart';
+import '../features/project_copilot/screens/project_detail_screen.dart';
 import '../features/pyq_analyzer/screens/pyq_analyzer_screen.dart';
 import '../features/snap_doubt/screens/snap_doubt_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
@@ -240,6 +243,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/snap-doubt',
         builder: (context, state) => const SnapDoubtScreen(),
+      ),
+      GoRoute(
+        path: '/project-copilot',
+        builder: (context, state) => const ProjectCopilotScreen(),
+      ),
+      GoRoute(
+        path: '/project-copilot/create',
+        builder: (context, state) => const CreateProjectScreen(),
+      ),
+      GoRoute(
+        path: '/project-copilot/:projectId',
+        builder: (context, state) => ProjectDetailScreen(
+          projectId: state.pathParameters['projectId']!,
+        ),
       ),
     ],
   );

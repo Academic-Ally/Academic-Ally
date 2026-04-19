@@ -249,8 +249,14 @@ class HomeScreen extends ConsumerWidget {
                                   color: const Color(0xFFE91E63),
                                   onTap: () => context.push('/snap-doubt'),
                                 ),
-                                // More cards land here as Phase 2 ships
-                                // (Project Copilot).
+                                _AiToolCard(
+                                  icon: Icons.lightbulb_outline,
+                                  title: 'Project Copilot',
+                                  subtitle: 'Major/minor project aid',
+                                  color: const Color(0xFFF57C00),
+                                  onTap: () =>
+                                      context.push('/project-copilot'),
+                                ),
                               ],
                             ),
                           ),

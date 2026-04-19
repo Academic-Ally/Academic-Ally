@@ -32,6 +32,7 @@ class DeepLinkService {
     '/gen-ui',
     '/pyq-analyzer',
     '/snap-doubt',
+    '/project-copilot',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.
