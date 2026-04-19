@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#161719</color>
+    <!-- Tint applied by FCM to monochrome notification icons on Android 5+. -->
+    <color name="notification_color">#6360FF</color>
 </resources>

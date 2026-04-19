@@ -215,8 +215,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 message: 'Are you sure you want to log out?',
                 actionLabel: 'Log Out',
                 onAction: () async {
-                  final authService = ref.read(authServiceProvider);
-                  await authService.signOut();
+                  await performSignOut(ref);
                 },
                 onCancel: () => setState(() => _showLogoutDialog = false),
               ),
@@ -229,8 +228,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     'By proceeding with this action, you will be permanently deleting all account data. This action cannot be undone.\n\nAre you sure you want to proceed?',
                 actionLabel: 'Delete',
                 onAction: () async {
-                  final authService = ref.read(authServiceProvider);
-                  await authService.deleteAccount();
+                  await performDeleteAccount(ref);
                 },
                 onCancel: () => setState(() => _showDeleteDialog = false),
               ),
