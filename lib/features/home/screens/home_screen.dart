@@ -306,7 +306,14 @@ class HomeScreen extends ConsumerWidget {
                                   onTap: () =>
                                       context.push('/communities'),
                                 ),
-                                // Marketplace card lands here as Phase 3 ships.
+                                _AiToolCard(
+                                  icon: Icons.storefront,
+                                  title: 'Marketplace',
+                                  subtitle: 'Buy/sell campus items',
+                                  color: const Color(0xFFAD1457),
+                                  onTap: () =>
+                                      context.push('/marketplace'),
+                                ),
                               ],
                             ),
                           ),

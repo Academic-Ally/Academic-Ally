@@ -35,6 +35,7 @@ class DeepLinkService {
     '/project-copilot',
     '/jobs',
     '/communities',
+    '/marketplace',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.

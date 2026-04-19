@@ -133,6 +133,11 @@ class FirestorePaths {
   static String channelMessage(String channelId, String messageId) =>
       'Channels/$channelId/Messages/$messageId';
 
+  // Marketplace (shared, Phase 3)
+  static String marketplace() => 'Marketplace';
+  static String marketplaceListing(String listingId) =>
+      'Marketplace/$listingId';
+
   // Knowledge Graph (admin-curated topic nodes, Phase 2 design)
   static String knowledgeGraphNodes(
     String university,

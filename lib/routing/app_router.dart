@@ -15,6 +15,9 @@ import '../features/gen_ui/screens/gen_ui_screen.dart';
 import '../features/jobs/screens/job_detail_screen.dart';
 import '../features/jobs/screens/jobs_screen.dart';
 import '../features/jobs/screens/post_job_screen.dart';
+import '../features/marketplace/screens/create_listing_screen.dart';
+import '../features/marketplace/screens/marketplace_detail_screen.dart';
+import '../features/marketplace/screens/marketplace_screen.dart';
 import '../features/misconception_graph/screens/knowledge_map_screen.dart';
 import '../features/project_copilot/screens/create_project_screen.dart';
 import '../features/project_copilot/screens/project_copilot_screen.dart';
@@ -289,6 +292,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/communities/:channelId',
         builder: (context, state) => ChannelDetailScreen(
           channelId: state.pathParameters['channelId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/marketplace',
+        builder: (context, state) => const MarketplaceScreen(),
+      ),
+      GoRoute(
+        path: '/marketplace/create',
+        builder: (context, state) => const CreateListingScreen(),
+      ),
+      GoRoute(
+        path: '/marketplace/:listingId',
+        builder: (context, state) => MarketplaceDetailScreen(
+          listingId: state.pathParameters['listingId']!,
         ),
       ),
     ],
