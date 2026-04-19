@@ -298,8 +298,15 @@ class HomeScreen extends ConsumerWidget {
                                   color: const Color(0xFF0277BD),
                                   onTap: () => context.push('/jobs'),
                                 ),
-                                // Communities + Marketplace cards
-                                // land here as Phase 3 ships.
+                                _AiToolCard(
+                                  icon: Icons.forum,
+                                  title: 'Communities',
+                                  subtitle: 'Chat by topic',
+                                  color: const Color(0xFF00897B),
+                                  onTap: () =>
+                                      context.push('/communities'),
+                                ),
+                                // Marketplace card lands here as Phase 3 ships.
                               ],
                             ),
                           ),

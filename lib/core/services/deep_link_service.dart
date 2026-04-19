@@ -34,6 +34,7 @@ class DeepLinkService {
     '/snap-doubt',
     '/project-copilot',
     '/jobs',
+    '/communities',
   };
 
   /// Route embedded in the URI that launched the app from a cold start.

@@ -125,6 +125,14 @@ class FirestorePaths {
   static String jobs() => 'Jobs';
   static String job(String jobId) => 'Jobs/$jobId';
 
+  // Channels + Messages (shared, Phase 3)
+  static String channels() => 'Channels';
+  static String channel(String channelId) => 'Channels/$channelId';
+  static String channelMessages(String channelId) =>
+      'Channels/$channelId/Messages';
+  static String channelMessage(String channelId, String messageId) =>
+      'Channels/$channelId/Messages/$messageId';
+
   // Knowledge Graph (admin-curated topic nodes, Phase 2 design)
   static String knowledgeGraphNodes(
     String university,

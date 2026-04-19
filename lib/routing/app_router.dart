@@ -8,6 +8,9 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/communities/screens/channel_detail_screen.dart';
+import '../features/communities/screens/communities_screen.dart';
+import '../features/communities/screens/create_channel_screen.dart';
 import '../features/gen_ui/screens/gen_ui_screen.dart';
 import '../features/jobs/screens/job_detail_screen.dart';
 import '../features/jobs/screens/jobs_screen.dart';
@@ -273,6 +276,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/jobs/:jobId',
         builder: (context, state) =>
             JobDetailScreen(jobId: state.pathParameters['jobId']!),
+      ),
+      GoRoute(
+        path: '/communities',
+        builder: (context, state) => const CommunitiesScreen(),
+      ),
+      GoRoute(
+        path: '/communities/create',
+        builder: (context, state) => const CreateChannelScreen(),
+      ),
+      GoRoute(
+        path: '/communities/:channelId',
+        builder: (context, state) => ChannelDetailScreen(
+          channelId: state.pathParameters['channelId']!,
+        ),
       ),
     ],
   );
