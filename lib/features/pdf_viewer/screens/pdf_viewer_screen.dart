@@ -11,6 +11,7 @@ import '../../bookmarks/providers/bookmarks_provider.dart';
 import '../../downloads/providers/downloads_provider.dart';
 import '../../recents/providers/recents_provider.dart';
 import '../../resources/providers/resources_provider.dart';
+import '../widgets/report_bottom_sheet.dart';
 
 class PdfViewerScreen extends ConsumerStatefulWidget {
   final String id;
@@ -236,6 +237,24 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     );
   }
 
+  void _openReport() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ReportBottomSheet(
+        resourceId: widget.id,
+        resourceName: widget.name,
+        subject: widget.subject,
+        category: widget.category,
+        university: widget.university,
+        course: widget.course,
+        branch: widget.branch,
+        sem: widget.sem,
+      ),
+    );
+  }
+
   void _showSnackBar(String message, {bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -292,6 +311,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   _handleRate();
                 case 'allybot':
                   _openAllyBot();
+                case 'report':
+                  _openReport();
               }
             },
             itemBuilder: (_) => [
@@ -312,6 +333,18 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     Icon(Icons.smart_toy_outlined, size: 20),
                     SizedBox(width: 8),
                     Text('Ask AllyBot'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_outlined,
+                        size: 20, color: Color(0xFFFF0101)),
+                    SizedBox(width: 8),
+                    Text('Report',
+                        style: TextStyle(color: Color(0xFFFF0101))),
                   ],
                 ),
               ),

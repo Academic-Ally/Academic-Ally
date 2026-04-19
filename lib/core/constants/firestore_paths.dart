@@ -76,6 +76,16 @@ class FirestorePaths {
   // Premium users
   static String premiumUser(String userId) => 'Premium_Users/$userId';
 
+  // User reports (abuse reporting)
+  static String userReport(
+    String university,
+    String course,
+    String branch,
+    String sem,
+    String uid,
+  ) =>
+      'userReports/$university/$course/$branch/$sem/$uid';
+
   // Notification topic format
   static String notificationTopic(
     String university,
