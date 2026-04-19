@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/theme.dart';
+import 'core/providers/deep_link_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'firebase_options.dart';
 import 'routing/app_router.dart';
@@ -22,6 +23,9 @@ class AcademicAllyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // Activate deep-link handling (cold-start + in-session URIs).
+    ref.watch(deepLinkProvider);
 
     return MaterialApp.router(
       title: 'Academic Ally',
