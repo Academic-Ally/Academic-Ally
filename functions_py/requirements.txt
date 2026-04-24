@@ -1,6 +1,6 @@
 firebase-functions==0.4.3
 firebase-admin==6.9.0
-crewai==1.14.3
+crewai[litellm]==1.14.3
 langchain-openai==1.2.0
 tavily-python==0.5.1
 pydantic>=2.11.9
