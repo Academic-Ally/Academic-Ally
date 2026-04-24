@@ -18,16 +18,25 @@ Academic Ally (Flutter app for Osmania University + JNTUH engineering students) 
 
 | Decision | Answer |
 |---|---|
-| Orchestration framework | **LangGraph** (JavaScript — `@langchain/langgraph`) |
-| Runtime | **Node.js on Firebase Cloud Functions Gen 2** (same `functions/` folder as `stopBilling`) |
-| Primary LLM | **Minimax** (single provider for all agents) |
+| Orchestration framework | **CrewAI** (https://www.crewai.com/) — role-based multi-agent framework |
+| Runtime | **Python 3.12 on Firebase Cloud Functions Gen 2** (new `functions_py/` codebase alongside existing Node.js `functions/`) |
+| Primary LLM | **Minimax** (single provider for all agents, via LangChain's OpenAI-compatible adapter) |
 | Web search tool | **Tavily** |
-| Workflow shape | **Supervisor pattern** (a coordinator agent orchestrates specialist workers) |
+| Workflow shape | **Hierarchical Crew** — a manager agent orchestrates specialist worker agents (CrewAI's `Process.hierarchical`) |
 | Grounding mode | **Hybrid** — prompt-reasoning + Tavily today; PDF retrieval tool added when R2 lands post-submission |
-| Loading UX | **Progressive** — Firestore-backed progress tracker drives per-agent checkmark UI |
+| Loading UX | **Progressive** — Firestore-backed progress tracker drives per-agent checkmark UI, updated via CrewAI's step/task callbacks |
 | Caching | **24-hour Firestore cache** at `PyqAnalysis/{uni}/{course}/{branch}/{sem}/{subject}` |
 | Failure model | **All-or-nothing** — full success or clean retry prompt |
 | First feature to implement | **PYQ Analyzer** |
+
+## Why Python + CrewAI (rationale, locked in 2026-04-20)
+
+Chose over an earlier Node.js + LangGraph tentative direction because:
+
+- Python is the industry standard for AI agent frameworks — CrewAI, AutoGen, LangChain, Haystack, LlamaIndex all Python-first; ecosystem depth roughly 10x Node.js
+- CrewAI's role-based agent model (`Agent(role=..., backstory=..., goal=...)`) produces shorter, more readable code than LangGraph's graph wiring
+- "Crew of AI agents" is a more compelling submission narrative than "graph workflow"
+- Firebase Functions Gen 2 supports Python 3.10–3.12 natively; adding a Python codebase alongside existing Node.js is a supported, non-disruptive pattern
 
 ## Keys required (from user)
 
@@ -56,30 +65,34 @@ Both stored as Firebase Secrets. Never in source control.
                             │ Body: { university, course, branch, sem, subject, pyqResourceIds[] }
                             ↓
 ┌────────────────────────────────────────────────────────────────────┐
-│     FIREBASE CLOUD FUNCTION (Node.js 20 + Gen 2 HTTP)              │
-│     Location: academic_ally/functions/ (same as stopBilling)       │
+│     FIREBASE CLOUD FUNCTION (Python 3.12 + Gen 2 HTTP)             │
+│     Location: academic_ally/functions_py/ (NEW codebase;           │
+│                existing Node.js functions/ unchanged)              │
 │                                                                    │
 │  1. Verify Firebase ID token → extract uid                         │
 │  2. Route to feature handler based on endpoint                     │
 │  3. Check Firestore cache (bypass workflow if fresh)               │
-│  4. Kick off LangGraph workflow                                    │
+│  4. Kick off CrewAI hierarchical crew                              │
 │  5. Write cache doc + progress tracker to Firestore                │
 │  6. Return JSON                                                    │
 └────────────────────────────────────────────────────────────────────┘
                             │
                             ↓
 ┌────────────────────────────────────────────────────────────────────┐
-│                 LANGGRAPH SUPERVISOR WORKFLOW                       │
+│                    CREWAI HIERARCHICAL CREW                         │
 │                                                                    │
-│  Shared State: { subject_ctx, syllabus, web_results,               │
-│                  pattern_notes, predictions, iteration_count }     │
+│  Agents: manager + 5 specialist workers (each with role/backstory) │
+│  Shared context passed between agents via CrewAI's built-in memory │
 │                                                                    │
-│  Supervisor loops:                                                 │
-│    - Reads state                                                   │
-│    - Minimax LLM call: "given state, which worker should run?"     │
-│    - Invokes chosen worker (or declares done)                      │
-│    - Worker updates state, returns control                         │
-│    - Loop until done OR max iterations hit                         │
+│  Manager agent:                                                    │
+│    - Reads current task state                                      │
+│    - Minimax LLM call: "which worker handles this next?"           │
+│    - Delegates task to chosen worker                               │
+│    - Worker executes (Minimax + optional tools)                    │
+│    - Result bubbles back to manager                                │
+│    - Loop until all tasks complete OR max iter hit                 │
+│                                                                    │
+│  Step callbacks fire → progress tracker doc updated                │
 └────────────────────────────────────────────────────────────────────┘
      │                │                │                │
      ↓                ↓                ↓                ↓
@@ -93,30 +106,31 @@ Both stored as Firebase Secrets. Never in source control.
 
 ```
 academic_ally/
-└── functions/                    # Single Node.js codebase
-    ├── index.js                  # Existing stopBilling + new HTTP endpoint handlers
-    ├── package.json              # Adds @langchain/langgraph, @langchain/core, @langchain/openai (Minimax-compat), @tavily/core, firebase-admin, zod
+├── functions/                    # Existing Node.js codebase — UNCHANGED
+│   ├── index.js                  # stopBilling (billing cap Cloud Function)
+│   └── package.json
+└── functions_py/                 # NEW Python 3.12 codebase for AI agents
+    ├── main.py                   # HTTP endpoint exports (Firebase Functions Python Gen 2)
+    ├── requirements.txt          # crewai, langchain-openai, tavily-python, firebase-functions, firebase-admin, pydantic
+    ├── .python-version           # 3.12
     ├── shared/
-    │   ├── auth.js               # Firebase ID token verifier middleware
-    │   ├── minimax.js            # LangChain ChatOpenAI wrapper configured for Minimax
-    │   ├── tavily.js             # Tavily search tool factory
-    │   ├── supervisor.js         # Reusable supervisor graph factory (used by all features)
-    │   ├── base_agent.js         # Agent class w/ prompt templating
-    │   ├── cache.js              # Firestore cache read/write
-    │   ├── progress.js           # Progress tracker doc read/write
-    │   └── errors.js             # Typed errors + user-facing message mapping
+    │   ├── __init__.py
+    │   ├── auth.py               # Firebase ID token verifier decorator
+    │   ├── minimax_llm.py        # CrewAI LLM config pointed at Minimax (OpenAI-compat endpoint)
+    │   ├── tavily_tool.py        # CrewAI tool wrapping Tavily search
+    │   ├── crew_factory.py       # Reusable hierarchical crew builder (used by all features)
+    │   ├── cache.py              # Firestore cache read/write helpers
+    │   ├── progress.py           # Progress tracker doc read/write, step callback factory
+    │   └── errors.py             # Typed exceptions + user-facing message mapping
     └── features/
+        ├── __init__.py
         ├── pyq_analyzer/
-        │   ├── workflow.js       # Graph construction
-        │   ├── agents/
-        │   │   ├── supervisor.js
-        │   │   ├── syllabus.js
-        │   │   ├── web_researcher.js
-        │   │   ├── pattern_analyzer.js
-        │   │   ├── question_predictor.js
-        │   │   └── output_formatter.js
-        │   ├── prompts/          # Markdown files with system prompts per agent
-        │   └── state.js          # Zod schema for feature's workflow state
+        │   ├── __init__.py
+        │   ├── crew.py           # Crew construction (agents + tasks + process)
+        │   ├── agents.py         # All 6 agent definitions (role/backstory/goal)
+        │   ├── tasks.py          # Task definitions (one per agent contribution)
+        │   ├── schema.py         # Pydantic models for input + output shape
+        │   └── prompts/          # Markdown files for backstories/goals (optional)
         ├── snap_doubt/           # Phase 4c
         ├── study_planner/
         ├── misconception/
@@ -125,18 +139,33 @@ academic_ally/
         └── allybot/
 ```
 
+## Firebase multi-codebase configuration
+
+The existing `firebase.json` needs a small update to register both codebases:
+
+```json
+{
+  "functions": [
+    { "source": "functions",    "codebase": "default", ... },
+    { "source": "functions_py", "codebase": "ai",       "runtime": "python312" }
+  ],
+  "storage": { "rules": "storage.rules" }
+}
+```
+
+`firebase deploy --only functions` deploys both. `firebase deploy --only functions:ai` deploys only Python. Zero risk to the Node.js codebase.
+
 ## Shared infrastructure (reused across all 6 features)
 
-- **Auth middleware** (Firebase ID token verify → extract `uid`)
-- **Minimax LangChain client** (OpenAI-compatible, read API key from Firebase Secret)
-- **Tavily search tool** (pre-wrapped LangChain tool)
-- **Supervisor graph factory** (takes worker list + goal prompt, returns compiled graph)
-- **Base agent class** (prompt templating, Minimax call, error wrapping, progress updates)
+- **Auth decorator** (Firebase ID token verify → extract `uid`, wraps endpoint handlers)
+- **Minimax LLM config** (CrewAI `LLM` wrapper pointed at Minimax OpenAI-compatible endpoint, reads API key from Firebase Secret)
+- **Tavily tool** (pre-wrapped CrewAI `Tool`, reads Tavily key from Secret)
+- **Crew factory** (takes agent list + task list + manager LLM, returns configured `Crew` with hierarchical process)
 - **Cache helpers** (read/write to Firestore at known paths, 24h freshness check)
-- **Progress tracker** (create/update `AnalysisRuns/{runId}` doc)
+- **Progress tracker + step callback** (create/update `AnalysisRuns/{runId}`, exposes a CrewAI-compatible `step_callback` that logs which agent is currently working)
 - **Error mapping** (internal exceptions → user-friendly HTTP responses)
 
-Feature-specific code (what's NOT shared): agent prompts, state shape, workflow graph, endpoint handler.
+Feature-specific code (what's NOT shared): agent roles/backstories, task definitions, output schemas, endpoint handler.
 
 ## Endpoints (8 total — 6 AI features + Misconception Graph's second endpoint + AllyBot chat)
 
@@ -161,16 +190,38 @@ All follow the same request shape: Firebase auth token + feature-specific JSON p
 
 # Section 2 — The 6 Agents (PYQ Analyzer)
 
-## Agent roster
+## Agent roster (CrewAI `Agent` definitions)
 
-| # | Agent | Role | Tools | LLM calls |
+Each agent is a CrewAI `Agent` with a `role`, `goal`, and `backstory` — the manager agent is configured separately via `manager_llm` in the `Crew`.
+
+| # | Agent | Role (CrewAI label) | Tools | Task calls |
 |---|---|---|---|---|
-| 1 | **Supervisor** | Decides which worker runs next based on state | — | 3-8 per run (one decision each) |
-| 2 | **Syllabus Worker** | Produces the official topic list for the subject | Minimax | 1 |
-| 3 | **Web Researcher** | Searches web for past-paper patterns + current syllabus info | Minimax + Tavily | 1-2 |
-| 4 | **Pattern Analyzer** | Reasons about exam conventions, marks distribution, question formats | Minimax | 1 |
-| 5 | **Question Predictor** | Generates predicted questions with likelihood percentages | Minimax | 1 |
-| 6 | **Output Formatter** | Shapes final JSON matching `PyqAnalysis` schema | Minimax (small call) | 1 |
+| 1 | **Manager** (via `Process.hierarchical`) | Orchestrator — delegates tasks to workers | — | 3-8 delegation decisions per run |
+| 2 | **Syllabus Researcher** | Produces the official topic list for the subject | Minimax LLM | 1 task |
+| 3 | **Web Researcher** | Searches web for past-paper patterns + current syllabus info | Minimax + Tavily tool | 1 task |
+| 4 | **Pattern Analyst** | Reasons about exam conventions, marks distribution, question formats | Minimax LLM | 1 task |
+| 5 | **Question Predictor** | Generates predicted questions with likelihood percentages | Minimax LLM | 1 task |
+| 6 | **Output Formatter** | Shapes final JSON matching `PyqAnalysis` schema | Minimax LLM | 1 task |
+
+## Example agent definition (CrewAI pattern)
+
+```python
+syllabus_researcher = Agent(
+    role='Syllabus Researcher',
+    goal='Produce the official topic list for {subject} in {university} {course} {branch} Sem {sem}',
+    backstory=(
+        "You are an expert in Indian engineering curricula with deep "
+        "knowledge of JNTUH and Osmania University syllabi. You are "
+        "meticulous, cite your reasoning, and never invent topics that "
+        "aren't in the official curriculum."
+    ),
+    llm=minimax_llm,
+    allow_delegation=False,
+    verbose=True
+)
+```
+
+All 5 worker agents follow this shape — only `role`, `goal`, `backstory`, and `tools` change per agent.
 
 ## Student-facing status strings
 
@@ -185,23 +236,43 @@ Progress tracker updates drive these:
 6. Finalizing your analysis...
 ```
 
-## Supervisor behavior
+## Manager behavior (CrewAI `Process.hierarchical`)
 
-The Supervisor reads the shared workflow state and decides what's next. Prompt template (simplified):
+In CrewAI's hierarchical process, the manager agent is auto-configured by CrewAI itself — we just pass `manager_llm=minimax_llm` in the `Crew` constructor. CrewAI generates the manager's prompt internally based on the task list and agent roster. The manager:
 
+- Reads the current task assigned by the Crew
+- Decides which worker agent is best suited (based on role + goal)
+- Delegates the task to that worker
+- Reviews the worker's output
+- Either passes the work forward to the next task or asks the worker to revise
+
+CrewAI's manager adapts similarly to our earlier supervisor concept: if Syllabus Researcher returns thin results, the manager may re-delegate to Web Researcher to fill gaps before moving on to Pattern Analyst.
+
+## Crew construction (PYQ Analyzer)
+
+```python
+pyq_crew = Crew(
+    agents=[syllabus_researcher, web_researcher, pattern_analyst,
+            question_predictor, output_formatter],
+    tasks=[research_syllabus, research_web, analyze_patterns,
+           predict_questions, format_output],
+    process=Process.hierarchical,
+    manager_llm=minimax_llm,
+    verbose=True,
+    step_callback=progress_tracker_callback(run_id),
+    max_rpm=60,
+    memory=True
+)
+result = pyq_crew.kickoff(inputs={
+    'subject': 'DBMS',
+    'university': 'JNTUH',
+    'course': 'BTECH',
+    'branch': 'CSE',
+    'sem': '3'
+})
 ```
-You are the Supervisor coordinating 5 specialist agents building an exam
-analysis for {subject} ({university} {course} {branch} Sem {sem}).
 
-Available workers: SYLLABUS, WEB_RESEARCHER, PATTERN_ANALYZER,
-QUESTION_PREDICTOR, OUTPUT_FORMATTER.
-
-Current state: {state_summary}
-
-Reply with ONLY the next worker name, or "DONE" if ready for formatter.
-```
-
-Supervisor adapts: if Syllabus Worker returns thin results, it may re-route to Web Researcher for a second pass before moving on.
+The `step_callback` is our Firestore progress-tracker hook — fires after each agent completes their task, updates `AnalysisRuns/{runId}.agents.{name}` to `"done"`.
 
 ## Progressive loading mechanism
 
@@ -281,15 +352,16 @@ No schema changes required to Firestore or Flutter.
 - Still failing → whole workflow cancelled, return user-facing error "We couldn't complete the analysis this time. Tap to try again."
 - Progress doc updated: failed agent shows ✗, remaining agents show "cancelled."
 
-### 2. Supervisor loop guard
+### 2. Manager loop guard (CrewAI `max_iter`)
 
-- Hard cap: **8 supervisor decisions per run**.
-- Exceeding cap → force Output Formatter with partial state → best-effort result.
+- `max_iter=8` set on each agent (CrewAI's built-in iteration cap)
+- Additionally: `max_rpm=60` on the crew (caps total Minimax calls per minute)
+- Exceeding either → CrewAI raises → caught and mapped to user-facing "couldn't complete" error
 
 ### 3. Overall timeout
 
-- **180 seconds** maximum per request.
-- Exceeding → cancel workflow, tracker status = `timeout`, HTTP returns timeout error.
+- **180 seconds** maximum per request (enforced via CrewAI's `Task(max_execution_time=180)` at the top-level task)
+- Exceeding → CrewAI cancels, tracker status = `timeout`, HTTP returns timeout error
 - App shows "Analysis took too long. Try again in a moment."
 
 ### 4. Infrastructure failures
@@ -391,10 +463,10 @@ This catches schema bugs that Flutter might silently mishandle.
 
 When you decide to open Academic Ally to real users, bolt on:
 
-- Unit tests for each agent's output parsing (~20 tests, ~1 day)
-- Integration tests for supervisor graph with mocked Minimax/Tavily (~10 tests, ~1 day)
+- Unit tests for each agent's output parsing using `pytest` (~20 tests, ~1 day)
+- Integration tests for the crew with mocked Minimax/Tavily via `vcrpy` or similar (~10 tests, ~1 day)
 - End-to-end test in CI with real API (1 test, runs nightly)
-- Automated output-quality gates (JSON schema validation, topic-weight sum check, forbidden-string detection)
+- Automated output-quality gates (Pydantic schema validation already in place via CrewAI, plus topic-weight sum check, forbidden-string detection)
 - GitHub Actions pipeline for PR validation
 - Load testing at 50 concurrent requests
 - Firestore emulator suite for offline dev
