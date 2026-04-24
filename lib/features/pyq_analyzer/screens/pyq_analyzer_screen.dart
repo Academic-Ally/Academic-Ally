@@ -78,6 +78,18 @@ class PyqAnalyzerScreen extends ConsumerWidget {
                         if (runner.isLoading) {
                           return _runningState(ref, runner.runId);
                         }
+                        if (runner.error != null && analysis == null) {
+                          return _runFailed(
+                            context: context,
+                            ref: ref,
+                            error: runner.error!,
+                            subject: selected,
+                            university: profile.university,
+                            course: profile.course,
+                            branch: profile.branch,
+                            sem: profile.sem,
+                          );
+                        }
                         if (analysis == null) {
                           return _callToAnalyze(
                             ref: ref,
@@ -373,6 +385,71 @@ class PyqAnalyzerScreen extends ConsumerWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
     if (diff.inHours < 24) return '${diff.inHours} h ago';
     return '${diff.inDays} d ago';
+  }
+
+  Widget _runFailed({
+    required BuildContext context,
+    required WidgetRef ref,
+    required Object error,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline,
+                size: 56, color: Color(0xFFFF0101)),
+            const SizedBox(height: 16),
+            Text(
+              'Analysis failed',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF161719),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[700],
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => ref
+                  .read(pyqAnalyzerProvider.notifier)
+                  .runAnalysis(
+                    university: university,
+                    course: course,
+                    branch: branch,
+                    sem: sem,
+                    subject: subject,
+                  ),
+              icon: const Icon(Icons.refresh),
+              label: Text(
+                'Try again',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
