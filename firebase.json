@@ -10,6 +10,20 @@
         "firebase-debug.*.log",
         "*.local"
       ]
+    },
+    {
+      "source": "functions_py",
+      "codebase": "ai",
+      "runtime": "python312",
+      "ignore": [
+        "venv",
+        ".venv",
+        "__pycache__",
+        "*.pyc",
+        ".pytest_cache",
+        "tests",
+        ".git"
+      ]
     }
   ],
   "storage": {
