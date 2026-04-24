@@ -5,8 +5,8 @@ Process.hierarchical in the Crew config.
 """
 from crewai import Agent
 
-from functions_py.shared.llm import get_llm
-from functions_py.shared.tavily_tool import get_tavily_tool
+from shared.llm import get_llm
+from shared.tavily_tool import get_tavily_tool
 
 
 AGENT_ROLE_TO_TRACKER = {

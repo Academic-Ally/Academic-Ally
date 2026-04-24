@@ -8,15 +8,15 @@ import logging
 from firebase_functions import https_fn
 from pydantic import ValidationError as PydanticValidationError
 
-from functions_py.shared.auth import extract_uid
-from functions_py.shared.cache import read_cache, write_cache
-from functions_py.shared.errors import (
+from shared.auth import extract_uid
+from shared.cache import read_cache, write_cache
+from shared.errors import (
     AgentFailureError,
     AuthError,
     ValidationError,
     user_facing_message,
 )
-from functions_py.shared.progress import (
+from shared.progress import (
     init_tracker,
     mark_complete,
     mark_failed,

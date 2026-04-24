@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from functions_py.shared.cache import read_cache, write_cache, is_fresh
+from shared.cache import read_cache, write_cache, is_fresh
 
 
 def _mock_firestore():
@@ -25,7 +25,7 @@ def test_read_cache_returns_data_when_fresh():
         "topicWeights": {"ER Model": 0.3},
         "lastAnalyzed": datetime.now(timezone.utc) - timedelta(hours=1),
     }
-    with patch("functions_py.shared.cache.firestore.client", return_value=client):
+    with patch("shared.cache.firestore.client", return_value=client):
         result = read_cache("PyqAnalysis/JNTUH/BTECH/CSE/3/DBMS", freshness_hours=24)
     assert result is not None
     assert result["subject"] == "DBMS"
@@ -34,7 +34,7 @@ def test_read_cache_returns_data_when_fresh():
 def test_read_cache_returns_none_when_missing():
     client, doc_ref, snap = _mock_firestore()
     snap.exists = False
-    with patch("functions_py.shared.cache.firestore.client", return_value=client):
+    with patch("shared.cache.firestore.client", return_value=client):
         result = read_cache("PyqAnalysis/missing", freshness_hours=24)
     assert result is None
 
@@ -46,7 +46,7 @@ def test_read_cache_returns_none_when_stale():
         "subject": "DBMS",
         "lastAnalyzed": datetime.now(timezone.utc) - timedelta(hours=48),
     }
-    with patch("functions_py.shared.cache.firestore.client", return_value=client):
+    with patch("shared.cache.firestore.client", return_value=client):
         result = read_cache("PyqAnalysis/stale", freshness_hours=24)
     assert result is None
 
@@ -54,7 +54,7 @@ def test_read_cache_returns_none_when_stale():
 def test_write_cache_sets_document():
     client, doc_ref, _ = _mock_firestore()
     data = {"subject": "DBMS", "topicWeights": {"ER": 0.3}}
-    with patch("functions_py.shared.cache.firestore.client", return_value=client):
+    with patch("shared.cache.firestore.client", return_value=client):
         write_cache("PyqAnalysis/JNTUH/BTECH/CSE/3/DBMS", data)
     client.document.assert_called_once()
     doc_ref.set.assert_called_once()

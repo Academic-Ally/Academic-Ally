@@ -18,11 +18,11 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 # Stub out Firestore-dependent progress helpers BEFORE importing crew
-from functions_py.shared import progress  # noqa: E402
+from shared import progress  # noqa: E402
 
 progress.init_tracker = lambda **kw: None
 progress.update_agent_status = lambda *a, **kw: None
@@ -30,8 +30,8 @@ progress.mark_complete = lambda *a, **kw: None
 progress.mark_failed = lambda *a, **kw: None
 progress.make_crewai_step_callback = lambda *a, **kw: (lambda step_output: None)
 
-from functions_py.features.pyq_analyzer.crew import run_pyq_analysis  # noqa: E402
-from functions_py.features.pyq_analyzer.schema import PyqAnalyzeRequest  # noqa: E402
+from features.pyq_analyzer.crew import run_pyq_analysis  # noqa: E402
+from features.pyq_analyzer.schema import PyqAnalyzeRequest  # noqa: E402
 
 
 def main() -> None:

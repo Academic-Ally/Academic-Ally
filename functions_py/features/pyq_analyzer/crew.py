@@ -7,9 +7,9 @@ Exceptions bubble up to the HTTP handler for user-facing translation.
 import logging
 from typing import Any
 
-from functions_py.shared.crew_factory import build_hierarchical_crew
-from functions_py.shared.errors import AgentFailureError
-from functions_py.shared.progress import make_crewai_step_callback
+from shared.crew_factory import build_hierarchical_crew
+from shared.errors import AgentFailureError
+from shared.progress import make_crewai_step_callback
 
 from .agents import AGENT_ROLE_TO_TRACKER, TRACKER_AGENT_NAMES, build_pyq_agents
 from .schema import PyqAnalysisOutput, PyqAnalyzeRequest

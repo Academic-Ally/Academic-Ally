@@ -23,13 +23,13 @@ import firebase_admin
 if not firebase_admin._apps:
     firebase_admin.initialize_app()
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from functions_py.features.pyq_analyzer.agents import TRACKER_AGENT_NAMES
-from functions_py.features.pyq_analyzer.crew import run_pyq_analysis
-from functions_py.features.pyq_analyzer.schema import PyqAnalyzeRequest
-from functions_py.shared.progress import init_tracker
+from features.pyq_analyzer.agents import TRACKER_AGENT_NAMES
+from features.pyq_analyzer.crew import run_pyq_analysis
+from features.pyq_analyzer.schema import PyqAnalyzeRequest
+from shared.progress import init_tracker
 
 
 def main() -> None:

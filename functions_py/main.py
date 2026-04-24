@@ -18,8 +18,8 @@ options.set_global_options(
 )
 
 
-from functions_py.features.pyq_analyzer.handler import pyq_analyze_handler  # noqa: E402
-from functions_py.features.maintenance.cleanup import cleanup_old_trackers  # noqa: E402,F401
+from features.pyq_analyzer.handler import pyq_analyze_handler  # noqa: E402
+from features.maintenance.cleanup import cleanup_old_trackers  # noqa: E402,F401
 
 
 @https_fn.on_request(

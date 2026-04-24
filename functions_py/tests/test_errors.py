@@ -1,7 +1,7 @@
 """Tests for shared.errors — typed exception hierarchy + user-facing mapping."""
 import pytest
 
-from functions_py.shared.errors import (
+from shared.errors import (
     AIBackendError,
     AuthError,
     RateLimitError,
