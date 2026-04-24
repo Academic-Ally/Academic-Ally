@@ -1,6 +1,6 @@
-# Firestore Schema — Current + Planned
+# Firestore Schema — Current State (Phase 1+2+3 Complete)
 
-Current collections in production + all new collections planned for AI pivot and Phase 3 features.
+All 27 collections currently in use or declared. Every path defined in `lib/core/constants/firestore_paths.dart`.
 
 ## University / Course Hierarchy
 
@@ -11,33 +11,32 @@ Universities:
 └── OU (Osmania University)
     └── BE
 
-Branches: IT, CSE, ECE, MECH, CIVIL, EEE
+Branches: IT, CSE, ECE, MECH, CIVIL, EEE, CSE AIML, CSE IOT
 Semesters: 1–8
 Resource Types: Notes, QuestionPapers, OtherResources, Syllabus
 ```
 
 ## Notification Topics
 
-Format: `{university}_{course}_{branch}_{sem}` — e.g., `JNTUH_BTECH_CSE_3`
+Format: `{university}_{course}_{branch}_{sem}` — e.g., `JNTUH_BTECH_CSE_3`. Branches with spaces (e.g., "CSE AIML") sanitized to `CSE-AIML`.
 
 ---
 
-## Current Collections (Production)
+## Pre-existing Collections (from migration)
 
 ### `Users/{uid}`
 ```
 {
   name, email, course, sem, branch, Year, university, college,
-  pfp (profile picture URL), sourceType ('MOBILE_APP'),
-  premiumUser (boolean), initiatedChats (number), messageCount (number),
+  pfp, sourceType ('MOBILE_APP'),
+  premiumUser (bool), initiatedChats (int), messageCount (int),
   fcmToken, subscribeArray[], createdAt, lastUpdated
 }
   └── NotesBookmarked/{noteId}     → bookmark data
   └── RatedList/{did}              → rating data
   └── UserUploads/{uploadId}       → upload metadata
   └── InitializedPdf/{pdfDocId}    → AllyBot chat sessions
-      { sourceId, url, conversation[], createdAt, lastUpdated }
-  └── SeekHub/Requests             → user's SeekHub request IDs
+  └── SeekHub/Requests             → user's request IDs
 ```
 
 ### `Universities/{university}/{course}/{branch}/{sem}/`
@@ -54,19 +53,21 @@ Format: `{university}_{course}_{branch}_{sem}` — e.g., `JNTUH_BTECH_CSE_3`
 {
   name, subject, category, rating, views, uploaderId, uploaderName,
   size, sem, branch, date, units,
-  storageId,  // Google Drive file ID (Phase 2 demo storage)
-  did         // legacy alias for storageId (older web-uploaded records)
+  storageId,   // R2 object key (Phase 4) or legacy Drive file ID
+  did          // legacy alias
 }
 ```
 
-**Storage (Phase 2 demo):** `storageId` (or legacy `did`) holds a Google Drive file ID. The Flutter PDF viewer embeds `https://drive.google.com/file/d/<storageId>/preview` in a WebView. Files must be "Anyone with link can view" on Drive. Download button opens `https://drive.google.com/uc?export=download&id=<storageId>` in the system browser.
+**Storage convention (Phase 4):** `storageId` will hold an R2 object key matching:
+`Universities/{university}/{course}/{branch}/{sem}/{subject}/{category}/{filename}.pdf`
 
-**Phase 4 migration path:** add a `storageType` field ('drive' | 'r2') or swap `storageId` semantics to an R2 path after a bulk migration script runs. PDF viewer will branch on `storageType` to pick WebView vs native renderer.
+The app's PDF viewer reads `storageId`, prefixes `R2StorageService.publicBaseUrl`, fetches via `flutter_pdfview`.
 
 ### `QueryList/{university}/{course}/SubjectsListDetail`
 ```
-{ list: [{ subject, sem, branch }] }   → quick lookup for search/recommendations
+{ list: [{ subjectName, sem, branch, ... }] }
 ```
+⚠ Field is `subjectName` (capital N), NOT `subject`. `SubjectModel.fromMap` reads `subjectName` primary with `subject` fallback.
 
 ### `SeekHub/{university}/{course}/{requestId}`
 ```
@@ -85,81 +86,245 @@ Format: `{university}_{course}_{branch}_{sem}` — e.g., `JNTUH_BTECH_CSE_3`
 }
 ```
 
-### Other Collections
-- `utils/meta-data/` → App config (requiredVersion, dynamicLink, mailId, courses hierarchy)
-- `UtilsProtected/meta-data/` → Protected resources data
-- `ImmutableUserData/{uid}/` → Custom claims / user permissions
-- `userReports/{university}/{course}/{branch}/{sem}/{uid}/` → Abuse reports
+### `userReports/{university}/{course}/{branch}/{sem}/{uid}`
+Abuse reports from PDF viewer. Shape:
+```
+{
+  uid, email,
+  report: { copyright: bool, misleading: bool, spam: bool },
+  subjectName, subjectId, sCategory, sSubject,
+  sUniversity, sCourse, sBranch, sSem, date
+}
+```
+
+### Other Pre-existing
+- `utils/meta-data` → App config (requiredVersion, dynamicLink, mailId, courses hierarchy)
+- `UtilsProtected/meta-data` → Protected resources data
+- `ImmutableUserData/{uid}` → Custom claims storage (`customClaims.admin`, `customClaims.branchManager`, etc.)
 - `Premium_Users/{userId}` → Premium user data (higher rate limits)
 
 ---
 
-## Planned Collections — AI Features (Phase 2)
+## Phase 2 Collections (AI Features) — ALL BUILT ✅
 
-| Feature | Collections / Document shape |
-|---------|------------------------------|
-| **Misconception Graph** | `KnowledgeGraph/{university}/{course}/{subject}/nodes/{nodeId}` — `{topic, prerequisites[], commonMisconceptions[]}`. `Users/{uid}/Misconceptions/{nodeId}` — `{misconceptionIds[], lastSeen, strength}`. `Users/{uid}/MasteryScores/{nodeId}` — `{score, attempts, lastUpdated}` |
-| **Study Planner** | `Users/{uid}/StudyPlans/{planId}` — `{examDate, subjects[], dailyTasks[], progress, createdAt}` |
-| **PYQ Analyzer** | `PyqAnalysis/{university}/{course}/{branch}/{sem}/{subject}` — `{topicWeights{}, predictedQuestions[], lastAnalyzed, sourceResourceIds[]}` (cache to avoid re-running expensive LLM calls) |
-| **Snap-a-Doubt** | `Users/{uid}/DoubtHistory/{doubtId}` — `{imageUrl, extractedQuestion, solution, topic, subject, createdAt}` |
-| **Project Copilot** | `Users/{uid}/Projects/{projectId}` — `{title, description, phase, ideation, litReview, scaffolding, reportDraft, createdAt, lastUpdated}` |
-| **Gen UI** | Runtime-only; no schema needed. Optional: `Users/{uid}/GenUIHistory/{sessionId}` for session replay |
+### `Users/{uid}/Misconceptions/{nodeId}`
+Per-user tagged misconceptions from the Knowledge Map practice sheet.
+```
+{
+  description,           // Plain-English misconception description
+  evidenceIds[],         // Question IDs that revealed this
+  lastSeen (Timestamp),
+  strength (0..1)        // How strongly the misconception is held
+}
+```
+Written by `PracticeNotifier.submit()` after a wrong answer. `AIService.tagMisconceptions` produces these.
+
+### `Users/{uid}/MasteryScores/{nodeId}`
+Per-topic mastery tracked over time.
+```
+{
+  score (0..1),          // EMA-style update: correct pulls toward 1
+  attempts (int),        // Total practice count
+  lastUpdated (Timestamp)
+}
+```
+Written by `AIService.updateMastery()`. Streamed back into Knowledge Map UI via `userMasteryStreamProvider`.
+
+### `Users/{uid}/StudyPlans/{planId}`
+Full study schedule. Generated by `AIService.generateStudyPlan()`.
+```
+{
+  examDate (Timestamp),
+  subjects[],
+  days: [{                 // Array of StudyDay
+    date (Timestamp),
+    tasks: [{              // Array of StudyTask
+      subject, topic,
+      durationMinutes,
+      rationale,
+      completed (bool)
+    }]
+  }],
+  createdAt (Timestamp)
+}
+```
+Task toggles update the whole `days` array via `toggleStudyTaskCompletion()` (Firestore can't update nested list index atomically).
+
+### `PyqAnalysis/{university}/{course}/{branch}/{sem}/{subject}`
+Shared analysis cache (not per-user — whole university/course cohort shares).
+```
+{
+  subject,
+  topicWeights: { topic -> 0..1 },
+  predictedQuestions: [{
+    question, topic, expectedMarks, likelihood, sourcePaperIds[]
+  }],
+  sourceResourceIds[],
+  lastAnalyzed (Timestamp)
+}
+```
+⚠ **No rule block for this collection in live Firestore rules — writes silently fail today.** Analyzer UI works (reads the cached doc if present, shows "Run Analysis" CTA if absent), but "Run Analysis" can't persist. Phase 4 fix, or one-line rule add to unblock pre-Phase 4.
+
+### `Users/{uid}/DoubtHistory/{doubtId}`
+Snap-a-Doubt solutions history.
+```
+{
+  imageUrl,              // Phase 2: local file path. Phase 4: Firebase Storage URL
+  extractedQuestion,
+  steps: [{ index, description, latex? }],
+  finalAnswer,
+  topic, subject?,
+  createdAt (Timestamp)
+}
+```
+
+### `Users/{uid}/Projects/{projectId}`
+Project Copilot state.
+```
+{
+  title, brief,
+  type ('major' | 'minor'),
+  createdAt (Timestamp),
+  cachedGuidance: {      // Map keyed by phase wire name
+    ideation: ProjectGuidance,
+    litReview: ProjectGuidance,
+    scaffolding: ProjectGuidance,
+    report: ProjectGuidance
+  }
+}
+
+// ProjectGuidance shape:
+{
+  phase, summary, bullets[], nextSteps[], references[], codeSnippet?
+}
+```
+Guidance is cached under `cachedGuidance.{phase.wire}` via dotted-path field update. Detail screen streams the doc so new guidance renders live.
+
+### `KnowledgeGraph/{uni}/{course}/{subject}/nodes/{nodeId}` (DECLARED but UNUSED in Phase 2)
+Admin-seeded topic graph. Live rules deny writes from client, so Phase 2 generates nodes client-side in `knowledgeNodesProvider` mirroring `MockAIService._topicsFor`. Phase 4 will seed this collection server-side and the provider will switch to stream from Firestore.
+
+```
+Planned shape:
+{
+  topic,
+  subject,
+  prerequisites: [nodeId],
+  commonMisconceptions: [string]
+}
+```
 
 ---
 
-## Planned Collections — Non-AI Features (Phase 3)
+## Phase 3 Collections (Community Features) — ALL BUILT ✅
 
-| Feature | Collections / Document shape |
-|---------|------------------------------|
-| **Communities & Channels** | `Channels/{channelId}` — `{name, topic, description, memberCount, admins[], createdAt}`. `Channels/{channelId}/Messages/{messageId}` — `{senderId, text, attachments[], createdAt}`. `Users/{uid}/JoinedChannels/{channelId}`. ⚠ **Heavy write volume — evaluate Firebase Realtime Database or a dedicated chat service vs Firestore** |
-| **Jobs & Internships** | `Jobs/{jobId}` — `{title, company, location, type, description, applyUrl, deadline, postedBy, createdAt}`. `Users/{uid}/SavedJobs/{jobId}`. Admin-only write rules |
-| **Marketplace** | `MarketplaceListings/{listingId}` — `{sellerId, title, description, price, condition, subject, category, imageUrls[], status, createdAt}`. `MarketplaceListings/{listingId}/Messages/{messageId}` (buyer-seller chat). `Users/{uid}/MyListings/{listingId}`. Needs Firebase Storage paths for listing images |
+### `Jobs/{jobId}`
+Job/internship postings. Open to all authenticated users to post/read.
+```
+{
+  title, company, location,
+  type ('internship' | 'full-time' | 'part-time'),
+  description,
+  applyUrl,              // External URL (url_launcher opens it)
+  tags[],
+  postedBy (uid), postedByName,
+  postedAt (Timestamp)
+}
+```
+
+### `Channels/{channelId}`
+Community chat channel metadata.
+```
+{
+  name, description,
+  createdBy (uid), createdByName,
+  createdAt (Timestamp),
+  messageCount (int),    // Best-effort increment on each message
+  lastMessageAt (Timestamp)
+}
+```
+
+### `Channels/{channelId}/Messages/{messageId}`
+Individual chat messages (subcollection).
+```
+{
+  text,
+  authorUid, authorName,
+  createdAt (Timestamp)
+}
+```
+Live stream via `channelMessagesProvider` ordered by `createdAt` ascending.
+
+### `Marketplace/{listingId}`
+Buy/sell listings.
+```
+{
+  title, description,
+  priceInr (double),
+  condition ('new' | 'like-new' | 'good' | 'fair'),
+  category?,
+  imageUrls[],           // Firebase Storage URLs (up to 5)
+  sellerUid, sellerName,
+  sellerPhone?,          // Digits-only; WhatsApp deep-link uses this
+  createdAt (Timestamp)
+}
+```
 
 ---
 
-## Cross-Cutting Concerns
+## Firebase Storage Paths
 
-### Firestore Composite Indexes
+### `Marketplace/{listingId}/{i}.jpg` — ACTIVE (Phase 3)
+Listing images uploaded during `createListing()`. Up to 5 per listing. Pre-generated `listingId` so uploads happen before Firestore write.
 
-Required for compound queries (`firestore.indexes.json`):
-- MarketplaceListings: `(subject, price, createdAt)` for filtered browse
-- Jobs: `(type, deadline, createdAt)` for active-jobs feed
-- Channel Messages: `(channelId, createdAt)` for paginated chat history
-- PyqAnalysis: `(university, course, branch, sem)` for lookup
-
-### Firebase Storage Paths (in addition to R2 for PDFs)
-
+### Planned for Phase 4
 - `profile_pictures/{uid}/` — profile avatars (owner-write, public-read)
-- `snap_a_doubt/{uid}/{doubtId}.jpg` — user-submitted doubt photos (owner-only)
-- `marketplace/{sellerId}/{listingId}/{imageIndex}.jpg` — listing images (seller-write, auth-read)
-- `channels/{channelId}/attachments/{senderId}/{fileName}` — community chat attachments
+- `snap_a_doubt/{uid}/{doubtId}.jpg` — user-submitted doubt photos (swap from local file paths)
 
-### Cost Implications
+---
 
-Firestore pricing (reads/writes/deletes/storage). Spark (free) tier: 50K reads/day, 20K writes/day. At scale:
-- **Communities chat** is the biggest cost risk (every message = 1 write + N reads for participants)
-- **Misconception Graph** updates hit per-quiz (moderate)
-- **Gen UI** uses LLM, not Firestore — different cost vector
-- Mitigation: Firestore bundle for static data (subjects list), pagination everywhere, caching layer
+## Firestore Composite Indexes (needed for Phase 4 deploy)
 
-### Per-Feature Backend Checklist (bundled with feature build)
+| Collection | Fields | Purpose |
+|---|---|---|
+| `Channels/{id}/Messages` (collection group) | `createdAt asc` | Message ordering |
+| `Marketplace` | `createdAt desc` | Newest listings first |
+| `Jobs` | `postedAt desc` | Newest jobs first |
+| `Users/{uid}/StudyPlans` | `createdAt desc` | User's plans newest first |
+| `Users/{uid}/Projects` | `createdAt desc` | User's projects newest first |
+| `Users/{uid}/DoubtHistory` | `createdAt desc` | Doubt history ordering |
 
-When building any feature:
-- [ ] Add collection paths to `firestore_paths.dart`
-- [ ] Write Dart model with `fromFirestore` / `toMap`
-- [ ] Update `firestore.rules` for the new collection(s)
-- [ ] Update `firestore.indexes.json` if compound queries are used
-- [ ] Add Firebase Storage path constants if the feature uploads media
-- [ ] Smoke-test rules with emulator before deploy
+Some of these may already exist in the Firebase Console — Phase 4 deploy should diff before creating duplicates.
 
-### Infrastructure Prep (one-time, before Phase 2 starts)
+---
 
-- [x] Audit current `firestore.rules` — DONE 2026-04-18 (see FIREBASE_AUDIT.md)
-- [x] Create `firestore.indexes.json` — DONE 2026-04-18
-- [x] Create `firebase.json` + `.firebaserc` + `storage.rules` — DONE 2026-04-18
-- [ ] Deploy rules (deferred to Phase 4 per user decision)
-- [ ] Set up Firebase Custom Claims Cloud Function (required for `isAdmin()` to work)
-- [ ] Clean up rogue Firestore indexes (`undefined` collectionGroup, unused `SeekHub (APP, SeekHub)`, `Chemistry.category` override)
-- [ ] Add Crashlytics to pubspec + Android/iOS config
-- [ ] Add Remote Config to pubspec
-- [ ] Decide: Firebase Cloud Functions alongside Netlify? (yes for Firestore triggers)
+## Per-Feature Backend Checklist
+
+When building any feature (was followed in Phase 1, drifted in Phase 2-3 — Phase 4 catches up):
+- [x] Add collection paths to `firestore_paths.dart` — DONE for all 27 collections
+- [x] Write Dart model with `fromFirestore` / `toMap` — DONE
+- [ ] Update `firestore.rules` for the new collection(s) — **DRIFTED, Phase 4 catches up**
+- [ ] Update `firestore.indexes.json` if compound queries are used — **DRIFTED, Phase 4 catches up**
+- [ ] Add Firebase Storage path constants if the feature uploads media — Marketplace done inline
+- [ ] Smoke-test rules with emulator before deploy — Phase 4
+
+## Rule Drift Summary (Phase 4 must address)
+
+| Collection | Covered by live rules? | Action needed |
+|---|---|---|
+| `Users/{uid}/Misconceptions` | Via `Users/**` wildcard | Per-user ownership scoping |
+| `Users/{uid}/MasteryScores` | Via `Users/**` wildcard | Per-user ownership scoping |
+| `Users/{uid}/StudyPlans` | Via `Users/**` wildcard | Per-user ownership scoping |
+| `Users/{uid}/DoubtHistory` | Via `Users/**` wildcard | Per-user ownership scoping |
+| `Users/{uid}/Projects` | Via `Users/**` wildcard | Per-user ownership scoping |
+| `PyqAnalysis/**` | **NO — writes fail** | Add rule block |
+| `KnowledgeGraph/**` | NO | Add admin-write, public-read |
+| `Jobs/**` | NO | Add auth-any write, public-read |
+| `Channels/**` | NO | Add auth-any write, auth-any read |
+| `Marketplace/**` | NO | Add auth-any write, public-read |
+
+## Cost Implications (ballpark)
+
+- **Firestore operations:** Blaze ~$0.06 per 100K reads. Communities chat is the biggest risk (every message = 1 write + N client reads via stream). Mitigation: pagination + message limits already in place (200-message cap per channel).
+- **Firebase Storage (Marketplace photos):** Storage is cheap. Egress is the killer — that's why R2 is planned for public PDFs.
+- **FCM messages:** free for transactional pushes. Topic subscription is free.
+- **AI costs (Phase 4):** depend on Gemini 1.5 Flash pricing. Mock stays zero-cost.
