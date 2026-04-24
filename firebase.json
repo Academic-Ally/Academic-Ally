@@ -22,7 +22,10 @@
         "*.pyc",
         ".pytest_cache",
         "tests",
-        ".git"
+        ".git",
+        ".env",
+        ".env.*",
+        "smoke_test_*.py"
       ]
     }
   ],
