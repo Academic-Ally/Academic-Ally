@@ -30,11 +30,13 @@ if not firebase_admin._apps:
 options.set_global_options(
     region="us-central1",
     timeout_sec=540,
-    memory=options.MemoryOption.MB_512,
+    memory=options.MemoryOption.GB_1,
 )
 
 
-from features.pyq_analyzer.handler import pyq_analyze_handler  # noqa: E402
+# Only import what Firebase's deploy-analyzer needs right now.
+# The heavy crewai/handler import is deferred to first-request time so
+# the analyzer's 10-second source-scan doesn't time out loading ML deps.
 from features.maintenance.cleanup import cleanup_old_trackers  # noqa: E402,F401
 
 
@@ -48,4 +50,5 @@ from features.maintenance.cleanup import cleanup_old_trackers  # noqa: E402,F401
 )
 def pyq_analyze(request: https_fn.Request) -> https_fn.Response:
     """POST /pyq_analyze — PYQ Analyzer endpoint."""
+    from features.pyq_analyzer.handler import pyq_analyze_handler
     return pyq_analyze_handler(request)

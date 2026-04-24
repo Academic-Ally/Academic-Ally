@@ -39,5 +39,5 @@ def build_hierarchical_crew(
         max_rpm=max_rpm,
         verbose=verbose,
         step_callback=step_callback,
-        memory=True,
+        memory=False,
     )
