@@ -1,6 +1,6 @@
 # AI-Native Pivot — Build Plan
 
-Academic Ally was repositioned from a static resource hub into an **AI-native education platform** for the major project submission. The migration is complete; Phases 1, 2, and 3 are all shipped. Phase 4 is the remaining endgame work.
+Academic Ally was repositioned from a static resource hub into an **AI-native education platform** for the major project submission. The migration is complete; Phases 1, 2, and 3 are all shipped. **Phase 4b landed the PYQ Analyzer's real multi-agent AI backend (Google Gemini via CrewAI).** The remaining Phase 4 endgame items are listed at the bottom.
 
 ## Confirmed AI Features (all built on mocks)
 
@@ -56,31 +56,56 @@ Academic Ally was repositioned from a static resource hub into an **AI-native ed
 
 **Interim (`097c10e`):** Storage rules deployed — `allow read, write: if request.auth != null`. Replaces default public scaffold. Marketplace image uploads work on top of this.
 
-### Phase 4 — Wire real services (endgame, not started)
+### Phase 4b — PYQ Analyzer multi-agent backend — COMPLETE ✅
 
-This is the remaining work to make the app production-ready. All Phase 1-3 work runs on mocks + permissive rules — fine for close-circle demo, not fine for public release.
+Shipped 2026-04-25. PYQ Analyzer is the flagship live AI feature:
 
-14. **Cloudflare R2** — fill `publicBaseUrl` in `r2_storage_service.dart`, create bucket, upload PDFs matching folder convention (`Universities/{uni}/{course}/{branch}/{sem}/{subject}/{category}/{file}.pdf`), update Firestore resource docs' `storageId` fields. R2 chosen over Firebase Storage because egress costs scale badly for public PDF downloads (napkin: ~₹2,250/month at 500 students × 3 downloads/day × 5 MB vs ~₹0 on R2).
+- **Architecture:** Python Firebase Cloud Functions Gen 2 (Python 3.12, us-central1, 1GB RAM, 540s timeout)
+- **Framework:** CrewAI 1.14.3 hierarchical process (manager auto-provisioned + 5 specialist workers: Syllabus Researcher, Web Researcher, Pattern Analyst, Question Predictor, Output Formatter)
+- **LLM:** Google Gemini 2.5 Flash Lite (via litellm routing; swap via `LLM_MODEL` Firebase Secret without redeploy)
+- **Web search tool:** Tavily, attached to research agents
+- **Secrets:** `GEMINI_API_KEY`, `TAVILY_API_KEY`, `LLM_MODEL` in Firebase Secret Manager
+- **Progress UI:** `AnalysisRuns/{runId}` tracker doc streamed live to Flutter via Riverpod `StreamProvider`, agents check off in real time
+- **Cache:** 24h at `PyqAnalysis/{uni}/{course}/{branch}/{sem}/{subject}`, cleanup function sweeps ephemeral run trackers hourly
+- **Flutter integration:** `AgentAIService` replaces `MockAIService`. PYQ uses the real backend; the other 6 interface methods delegate to `MockAIService` so every other AI feature keeps working on mocks.
+- **Firestore rules:** deployed 2026-04-25 — Phase 3 collections (Jobs, Channels, Marketplace) + Phase 4 collections (PyqAnalysis, AnalysisRuns, KnowledgeGraph, Premium_Users) all now have explicit rule blocks. No catch-all.
+- **Tests:** 21 pytest unit tests for the Python backend, all green.
+- **Auth:** Firebase ID token required on every request; 401 if missing/invalid.
+- **Live endpoint:** `https://us-central1-academic-ally-app.cloudfunctions.net/pyq_analyze`
 
-15. **LLM** — swap `MockAIService` → `GeminiAIService` (Gemini 1.5 Flash for cost/capability). Requires a Firebase Function proxy to keep the API key off-device. Feature code doesn't change — only `aiServiceProvider`.
+Full commit log in `../CLAUDE.md` under the "Phase 4b — PYQ Analyzer real AI backend" section.
 
-16. **Re-wire AllyBot** — `MockAIService.chatAboutPdf` is ready for Phase 4 swap, but AllyBot UI currently calls a legacy Netlify/ChatPDF path. Audit `cloudFunctionsBaseUrl` in `app_constants.dart:55` (currently wrong).
+### Phase 4 — Remaining endgame work (NOT started)
 
-17. **Deploy strict Firestore rules** — draft locally first covering all 27 collections (10 pre-existing + 9 Phase 2 + 3 Phase 3). Must fix the broken `ImmutableUserData` helper function (uses `{document}` as literal text, not a variable). Must add `PyqAnalysis` rule block. Must enforce per-user ownership on all `Users/{uid}/*` subcollections.
+Making the app fully production-ready for public release:
+
+14. **Cloudflare R2** — fill `publicBaseUrl` in `r2_storage_service.dart`, create bucket, upload PDFs matching folder convention (`Universities/{uni}/{course}/{branch}/{sem}/{subject}/{category}/{file}.pdf`), update Firestore resource docs' `storageId` fields. R2 chosen over Firebase Storage because egress costs scale badly for public PDF downloads.
+
+15. **Port the remaining 5 AI features' backends** — Knowledge Map, Study Planner, Gen UI, Snap-a-Doubt, Project Copilot. Each becomes its own CrewAI crew under `functions_py/features/*/` reusing the PYQ pattern (schema/agents/tasks/crew/handler). Snap-a-Doubt additionally needs a vision-capable model variant.
+
+16. **Port AllyBot (PDF chat)** through the same backend. Remove Netlify legacy path. Fix `cloudFunctionsBaseUrl` in `app_constants.dart`. AllyBot uses ChatPDF today; the real rewire will use Gemini with PDF grounding.
+
+17. **Strict Firestore rules** — draft per-user ownership for `Users/{uid}/*`, admin gating on `ImmutableUserData`, and restrict `AnalysisRuns` reads to the owning user only. Depends on the Custom Claims Cloud Function landing first.
 
 18. **Deploy composite indexes** — `Channels/{channelId}/Messages orderBy createdAt`, `Marketplace orderBy createdAt`, `Jobs orderBy postedAt`, `Users/{uid}/StudyPlans orderBy createdAt`, `Users/{uid}/Projects orderBy createdAt`, `Users/{uid}/DoubtHistory orderBy createdAt`.
 
-19. **Set up Firebase Custom Claims Cloud Function** (required for `isAdmin()` checks in rules to work). Admin system uses Firestore doc claims at `ImmutableUserData/{uid}.customClaims.admin` — needs an Admin SDK function to write to this path.
+19. **Firebase Custom Claims Cloud Function** — required for `isAdmin()` checks in strict rules. Admin role lives at `ImmutableUserData/{uid}.customClaims.admin`; needs an Admin SDK function that writes/reads this and mints auth custom claims.
 
 20. **Clean up rogue Console indexes** (`undefined` collectionGroup, unused `SeekHub (APP, SeekHub)`, `Chemistry.category` override).
 
-21. **Storage rules hardening** — path-scoped writes (users only write to their own `{uid}` prefix), MIME type validation (`contentType.matches('image/.*')`), size limits (`< 5 * 1024 * 1024`).
+21. **Storage rules hardening** — path-scoped writes (users only write to their own `{uid}` prefix), MIME type validation, size limits.
 
 22. **LaTeX rendering for Snap-a-Doubt** (optional polish) — add `flutter_math_fork` to render LaTeX steps properly instead of monospace placeholder.
 
-23. **Automated tests** — zero today. FCM idempotency logic, deep-link parsing, topic sanitization, and mastery EMA update are the highest-value unit tests to add before flipping to real services.
+23. **Automated tests (Dart side)** — Python side has 21 tests for the AI backend (all green). Dart side still zero. Start with FCM idempotency, deep-link parsing, topic sanitization, mastery EMA update.
 
-24. **Testing, polish, demo prep.**
+24. **Pre-deploy script** to automate the `mv functions_py/.env functions_py/.env.local` dance. Firebase CLI auto-reads `.env` and conflicts with `secrets=[...]` declarations; right now this is manual.
+
+25. **Revert the temporary `debug_error` / `debug_traceback` fields** in `features/pyq_analyzer/handler.py` before public release.
+
+26. **Enable Google Cloud billing on the project** before public demo — free-tier Gemini is 200 req/day per model; hitting that during a live demo is embarrassing. Paid tier costs ~$0.01–0.02/run.
+
+27. **Testing, polish, demo prep.**
 
 ## Key Architectural Principles (still true)
 
@@ -89,11 +114,9 @@ This is the remaining work to make the app production-ready. All Phase 1-3 work 
 - **Single swap point.** By Phase 4, flipping R2 + LLM config will activate every feature without feature-code changes.
 - **Backend as first-class.** Every feature added its Firestore path to `firestore_paths.dart` as it landed.
 
-## Honest Phase 2/3 drift (worth noting)
+## Rules status (resolved 2026-04-25)
 
-The "add Firestore rule block in the same change" discipline from the original plan was NOT followed during Phase 2/3 builds. The 9 new collections added in Phase 2 + 3 exist in Firestore with no rule blocks — they work because the live wildcard rules (`Users/**`, `Marketplace/**` don't exist but `PyqAnalysis` doesn't either). Phase 4 will catch this up in one pass rather than retroactively adding them per-feature.
-
-**`PyqAnalysis` in particular has no wildcard covering it** — PYQ Analyzer "Run Analysis" writes fail silently today. Fix as part of Phase 4 rules deploy, or as a one-liner rule add to make it work pre-Phase 4 if needed for demo.
+Phase 4b deploy caught up the rule blocks that drifted during Phase 2 + 3: `PyqAnalysis`, `AnalysisRuns`, `Jobs`, `Channels`, `Marketplace`, `Premium_Users`, `KnowledgeGraph` all now have explicit `auth != null` rule blocks. This was causing silent permission-denied failures on every post-Phase-2 collection write. File: `academic_ally/firestore.rules`, deployed via `firebase deploy --only firestore:rules`.
 
 ## Reference
 

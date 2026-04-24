@@ -1,6 +1,8 @@
-# Firestore Schema — Current State (Phase 1+2+3 Complete)
+# Firestore Schema — Current State (Phases 1+2+3 + Phase 4b PYQ Analyzer)
 
-All 27 collections currently in use or declared. Every path defined in `lib/core/constants/firestore_paths.dart`.
+All 29 collections currently in use or declared. Every path defined in `lib/core/constants/firestore_paths.dart`.
+
+**Rules status (2026-04-25):** `firestore.rules` checked into repo and deployed. Every collection that accepts writes has an explicit `allow read, write: if request.auth != null` rule block (close-circle demo policy). No catch-all wildcard. Phase 4 strict per-user rules still pending.
 
 ## University / Course Hierarchy
 
@@ -316,15 +318,51 @@ When building any feature (was followed in Phase 1, drifted in Phase 2-3 — Pha
 | `Users/{uid}/StudyPlans` | Via `Users/**` wildcard | Per-user ownership scoping |
 | `Users/{uid}/DoubtHistory` | Via `Users/**` wildcard | Per-user ownership scoping |
 | `Users/{uid}/Projects` | Via `Users/**` wildcard | Per-user ownership scoping |
-| `PyqAnalysis/**` | **NO — writes fail** | Add rule block |
-| `KnowledgeGraph/**` | NO | Add admin-write, public-read |
-| `Jobs/**` | NO | Add auth-any write, public-read |
-| `Channels/**` | NO | Add auth-any write, auth-any read |
-| `Marketplace/**` | NO | Add auth-any write, public-read |
+| `PyqAnalysis/**` | ✅ DEPLOYED 2026-04-25 | Strict per-curriculum scoping (Phase 4 strict rules) |
+| `KnowledgeGraph/**` | ✅ DEPLOYED 2026-04-25 | Admin-write, public-read |
+| `Jobs/**` | ✅ DEPLOYED 2026-04-25 | Poster-owned writes, public-read |
+| `Channels/**` | ✅ DEPLOYED 2026-04-25 | Auth-any writes, auth-any reads |
+| `Marketplace/**` | ✅ DEPLOYED 2026-04-25 | Owner-scoped writes, public-read |
+| `AnalysisRuns/{runId}` | ✅ DEPLOYED 2026-04-25 | Backend writes only (currently permissive) |
+| `Premium_Users/**` | ✅ DEPLOYED 2026-04-25 | Admin writes only |
+
+---
+
+## Phase 4b — AnalysisRuns collection (LIVE)
+
+### `AnalysisRuns/{runId}`
+Ephemeral per-run progress tracker for the PYQ Analyzer multi-agent crew. Flutter subscribes to this doc in real time to render the progressive loading UI (5 agent checkmarks).
+
+```
+{
+  runId: string (client-generated UUID),
+  subject: string,
+  status: 'running' | 'complete' | 'failed' | 'timeout',
+  agents: {
+    syllabus: 'pending' | 'done' | 'failed',
+    webResearch: 'pending' | 'done' | 'failed',
+    pattern: 'pending' | 'done' | 'failed',
+    predictor: 'pending' | 'done' | 'failed',
+    formatter: 'pending' | 'done' | 'failed',
+  },
+  errorMessage?: string,
+  createdAt: serverTimestamp,
+  completedAt?: serverTimestamp,
+}
+```
+
+**Writes:** only by the Python backend (`cloud_run_revision/pyq_analyze` Cloud Run service) via the step_callback hook + explicit `mark_complete` / `mark_failed` calls.
+
+**Reads:** by Flutter via `analysisRunProvider(runId)` StreamProvider — live doc subscription.
+
+**Lifetime:** ~60–90 seconds during a run. Scheduled function `cleanup_old_trackers` deletes docs older than 1 hour every hour.
+
+---
 
 ## Cost Implications (ballpark)
 
 - **Firestore operations:** Blaze ~$0.06 per 100K reads. Communities chat is the biggest risk (every message = 1 write + N client reads via stream). Mitigation: pagination + message limits already in place (200-message cap per channel).
 - **Firebase Storage (Marketplace photos):** Storage is cheap. Egress is the killer — that's why R2 is planned for public PDFs.
 - **FCM messages:** free for transactional pushes. Topic subscription is free.
-- **AI costs (Phase 4):** depend on Gemini 1.5 Flash pricing. Mock stays zero-cost.
+- **AI costs (Phase 4b, PYQ only):** Gemini 2.5 Flash Lite ~$0.01–0.02 per analysis on paid tier. 200 requests/day free-tier quota = roughly 8–15 full PYQ runs/day before hitting the cap.
+- **Tavily web search:** free tier is 1000 searches/month; each PYQ run uses 2–5 searches. Comfortable headroom.
