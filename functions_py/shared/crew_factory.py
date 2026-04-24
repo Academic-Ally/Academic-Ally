@@ -8,7 +8,7 @@ from typing import List
 
 from crewai import Agent, Crew, Process, Task
 
-from .minimax_llm import get_minimax_llm
+from .llm import get_llm
 
 
 def build_hierarchical_crew(
@@ -17,7 +17,7 @@ def build_hierarchical_crew(
     tasks: List[Task],
     step_callback=None,
     max_iter: int = 8,
-    max_rpm: int = 60,
+    max_rpm: int = 8,
     verbose: bool = True,
 ) -> Crew:
     """Build a CrewAI Crew with hierarchical process and sensible defaults.
@@ -30,7 +30,7 @@ def build_hierarchical_crew(
         max_rpm: Max LLM calls per minute across the whole crew.
         verbose: Log agent thinking for debugging.
     """
-    manager_llm = get_minimax_llm(temperature=0.1)
+    manager_llm = get_llm(temperature=0.1)
     return Crew(
         agents=agents,
         tasks=tasks,

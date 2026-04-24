@@ -5,7 +5,7 @@ Process.hierarchical in the Crew config.
 """
 from crewai import Agent
 
-from functions_py.shared.minimax_llm import get_minimax_llm
+from functions_py.shared.llm import get_llm
 from functions_py.shared.tavily_tool import get_tavily_tool
 
 
@@ -22,7 +22,7 @@ TRACKER_AGENT_NAMES = list(AGENT_ROLE_TO_TRACKER.values())
 
 def build_pyq_agents():
     """Return the 5 specialist agents for PYQ Analyzer."""
-    llm = get_minimax_llm(temperature=0.3)
+    llm = get_llm(temperature=0.3)
     tavily_tool = get_tavily_tool()
 
     syllabus_researcher = Agent(
