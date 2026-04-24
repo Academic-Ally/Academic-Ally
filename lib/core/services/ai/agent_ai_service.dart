@@ -7,18 +7,25 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/ai_models.dart';
 import 'ai_service.dart';
+import 'mock_ai_service.dart';
 
 /// AIService backed by the Python Firebase Cloud Functions multi-agent
 /// backend. Phase 4b only implements [analyzePyq] end-to-end; the other
-/// methods throw [UnimplementedError] until their crews are ported in
+/// seven methods delegate to [MockAIService] so the rest of the app keeps
+/// working against canned responses until their crews are ported in
 /// subsequent plans.
 class AgentAIService implements AIService {
-  AgentAIService({http.Client? httpClient, Uuid? uuid})
-      : _http = httpClient ?? http.Client(),
-        _uuid = uuid ?? const Uuid();
+  AgentAIService({
+    http.Client? httpClient,
+    Uuid? uuid,
+    AIService? fallback,
+  })  : _http = httpClient ?? http.Client(),
+        _uuid = uuid ?? const Uuid(),
+        _fallback = fallback ?? MockAIService();
 
   final http.Client _http;
   final Uuid _uuid;
+  final AIService _fallback;
 
   @override
   Future<PyqAnalysis> analyzePyq({
@@ -152,6 +159,9 @@ class AgentAIService implements AIService {
     }
   }
 
+  // The 7 non-PYQ methods delegate to MockAIService so those features
+  // keep working on canned responses until their crews are ported.
+
   @override
   Future<List<Misconception>> tagMisconceptions({
     required String subject,
@@ -160,9 +170,12 @@ class AgentAIService implements AIService {
     required String userAnswer,
     required String correctAnswer,
   }) =>
-      throw UnimplementedError(
-        'tagMisconceptions: AgentAIService Phase 4b only wires PYQ Analyzer. '
-        'This method ports in the next plan.',
+      _fallback.tagMisconceptions(
+        subject: subject,
+        topic: topic,
+        questionText: questionText,
+        userAnswer: userAnswer,
+        correctAnswer: correctAnswer,
       );
 
   @override
@@ -171,9 +184,7 @@ class AgentAIService implements AIService {
     required String nodeId,
     required bool wasCorrect,
   }) =>
-      throw UnimplementedError(
-        'updateMastery: Phase 4b PYQ-only; port next.',
-      );
+      _fallback.updateMastery(uid: uid, nodeId: nodeId, wasCorrect: wasCorrect);
 
   @override
   Future<StudyPlan> generateStudyPlan({
@@ -185,7 +196,15 @@ class AgentAIService implements AIService {
     List<String> weakTopics = const [],
     int dailyStudyMinutes = 120,
   }) =>
-      throw UnimplementedError('generateStudyPlan: Phase 4b PYQ-only.');
+      _fallback.generateStudyPlan(
+        uid: uid,
+        examDate: examDate,
+        subjects: subjects,
+        branch: branch,
+        sem: sem,
+        weakTopics: weakTopics,
+        dailyStudyMinutes: dailyStudyMinutes,
+      );
 
   @override
   Future<DoubtSolution> solveDoubtFromImage({
@@ -193,7 +212,11 @@ class AgentAIService implements AIService {
     required String imageUrl,
     String? subjectHint,
   }) =>
-      throw UnimplementedError('solveDoubtFromImage: Phase 4b PYQ-only.');
+      _fallback.solveDoubtFromImage(
+        uid: uid,
+        imageUrl: imageUrl,
+        subjectHint: subjectHint,
+      );
 
   @override
   Future<ProjectGuidance> getProjectGuidance({
@@ -203,14 +226,20 @@ class AgentAIService implements AIService {
     required Map<String, dynamic> projectContext,
     String? userQuery,
   }) =>
-      throw UnimplementedError('getProjectGuidance: Phase 4b PYQ-only.');
+      _fallback.getProjectGuidance(
+        uid: uid,
+        projectId: projectId,
+        phase: phase,
+        projectContext: projectContext,
+        userQuery: userQuery,
+      );
 
   @override
   Future<Map<String, dynamic>> generateUIResponse({
     required String prompt,
     required Map<String, dynamic> context,
   }) =>
-      throw UnimplementedError('generateUIResponse: Phase 4b PYQ-only.');
+      _fallback.generateUIResponse(prompt: prompt, context: context);
 
   @override
   Future<String> chatAboutPdf({
@@ -219,7 +248,12 @@ class AgentAIService implements AIService {
     required String question,
     List<Map<String, String>> priorTurns = const [],
   }) =>
-      throw UnimplementedError('chatAboutPdf: Phase 4b PYQ-only.');
+      _fallback.chatAboutPdf(
+        uid: uid,
+        pdfUrl: pdfUrl,
+        question: question,
+        priorTurns: priorTurns,
+      );
 }
 
 class PyqAnalysisWithRunId {
