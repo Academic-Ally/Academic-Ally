@@ -6,6 +6,7 @@ import '../../../config/theme.dart';
 import '../../../models/ai_models.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../resources/providers/resources_provider.dart';
+import '../providers/analysis_run_provider.dart';
 import '../providers/pyq_analyzer_provider.dart';
 
 /// PYQ Analyzer — scans past question papers for a subject and predicts
@@ -74,7 +75,9 @@ class PyqAnalyzerScreen extends ConsumerWidget {
                           const Center(child: CircularProgressIndicator()),
                       error: (e, _) => _error(e.toString()),
                       data: (analysis) {
-                        if (runner.isLoading) return _runningState();
+                        if (runner.isLoading) {
+                          return _runningState(ref, runner.runId);
+                        }
                         if (analysis == null) {
                           return _callToAnalyze(
                             ref: ref,
@@ -247,20 +250,20 @@ class PyqAnalyzerScreen extends ConsumerWidget {
     );
   }
 
-  Widget _runningState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 18),
-          Text(
-            'Analyzing past papers…',
-            style:
-                GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
-          ),
-        ],
-      ),
+  Widget _runningState(WidgetRef ref, String? runId) {
+    if (runId == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final runAsync = ref.watch(analysisRunProvider(runId));
+    return runAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const Center(child: CircularProgressIndicator()),
+      data: (run) {
+        if (run == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return _ProgressPanel(run: run);
+      },
     );
   }
 
@@ -510,6 +513,123 @@ class _PredictedQuestionCard extends StatelessWidget {
               fontSize: 13,
               color: isDark ? Colors.white : const Color(0xFF161719),
               height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressPanel extends StatelessWidget {
+  final AnalysisRun run;
+
+  const _ProgressPanel({required this.run});
+
+  static const _steps = [
+    ('syllabus', 'Mapping out the syllabus'),
+    ('webResearch', 'Searching the web for past paper patterns'),
+    ('pattern', 'Analyzing exam patterns'),
+    ('predictor', 'Predicting likely questions'),
+    ('formatter', 'Finalizing your analysis'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Analyzing ${run.subject}',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF161719),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '5 AI agents collaborating…',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (final (key, label) in _steps)
+            _ProgressRow(
+              label: label,
+              isDone: run.isDone(key),
+              isFailed: run.isFailedAgent(key),
+              isActive: !run.isDone(key) &&
+                  !run.isFailedAgent(key) &&
+                  run.isRunning,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressRow extends StatelessWidget {
+  final String label;
+  final bool isDone;
+  final bool isFailed;
+  final bool isActive;
+
+  const _ProgressRow({
+    required this.label,
+    required this.isDone,
+    required this.isFailed,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget icon;
+    if (isDone) {
+      icon = const Icon(Icons.check_circle,
+          color: Color(0xFF4CAF50), size: 20);
+    } else if (isFailed) {
+      icon = const Icon(Icons.cancel,
+          color: Color(0xFFFF0101), size: 20);
+    } else if (isActive) {
+      icon = const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    } else {
+      icon = Icon(
+        Icons.radio_button_unchecked,
+        color: Colors.grey[400],
+        size: 20,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(width: 24, child: Center(child: icon)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isDone
+                    ? Colors.grey[700]
+                    : isFailed
+                        ? const Color(0xFFFF0101)
+                        : isActive
+                            ? Colors.black87
+                            : Colors.grey[500],
+              ),
             ),
           ),
         ],
