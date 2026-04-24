@@ -23,7 +23,7 @@ from functions_py.features.maintenance.cleanup import cleanup_old_trackers  # no
 
 
 @https_fn.on_request(
-    secrets=["GEMINI_API_KEY", "TAVILY_API_KEY"],
+    secrets=["GEMINI_API_KEY", "TAVILY_API_KEY", "LLM_MODEL"],
     timeout_sec=540,
     cors=options.CorsOptions(
         cors_origins=["*"],
