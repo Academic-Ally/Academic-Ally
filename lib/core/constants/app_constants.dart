@@ -54,6 +54,12 @@ class AppConstants {
   static const String cloudFunctionsBaseUrl =
       'https://us-central1-academic-ally-app.cloudfunctions.net';
 
+  // Python AI backend base URL (Firebase Functions Gen 2 / us-central1)
+  // Each AI endpoint is a top-level function under this origin, e.g.
+  //   POST {aiBackendBaseUrl}/pyq_analyze
+  static const String aiBackendBaseUrl =
+      'https://us-central1-academic-ally-app.cloudfunctions.net';
+
   // Chat limits
   static const int maxChatInitiations = 50;
   static const int dailyMessageLimitRegular = 10;
