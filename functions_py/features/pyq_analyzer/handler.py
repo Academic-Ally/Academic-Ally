@@ -89,11 +89,17 @@ def pyq_analyze_handler(request: https_fn.Request) -> https_fn.Response:
     try:
         output = run_pyq_analysis(req)
     except Exception as exc:
+        import traceback
+        tb = traceback.format_exc()
         logger.exception("pyq analysis failed")
-        mark_failed(req.run_id, failing_agent="crew", error_message=str(exc))
+        mark_failed(req.run_id, failing_agent="crew", error_message=str(exc)[:500])
         status = 503 if isinstance(exc, AgentFailureError) else 500
         return https_fn.Response(
-            json.dumps({"error": user_facing_message(exc)}),
+            json.dumps({
+                "error": user_facing_message(exc),
+                "debug_error": str(exc)[:2000],
+                "debug_traceback": tb[-2000:],
+            }),
             status=status,
             content_type="application/json",
         )

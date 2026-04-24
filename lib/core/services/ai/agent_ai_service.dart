@@ -153,7 +153,12 @@ class AgentAIService implements AIService {
   String _extractErrorMessage(http.Response response) {
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      return (body['error'] as String?) ?? 'Unknown error';
+      final userMsg = body['error'] as String? ?? 'Unknown error';
+      final debug = body['debug_error'] as String?;
+      if (debug != null && debug.isNotEmpty) {
+        return '$userMsg\n\nDEBUG: $debug';
+      }
+      return userMsg;
     } catch (_) {
       return 'Server error (${response.statusCode})';
     }
