@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function getImmutableDocumentId() {
+      return get(/databases/$(database)/documents/ImmutableUserData/{document}).data.uid;
+    }
+
+    function isBranchManager() {
+      return get(/databases/$(database)/documents/ImmutableUserData/{document}).data.customClaims.admin == true;
+    }
+
+    match /ImmutableUserData/{document=**} {
+      allow read;
+      allow write: if request.auth.uid == getImmutableDocumentId() && isBranchManager();
+    }
+
+    match /QueryList/{document=**} {
+      allow read, update, write: if request.auth != null;
+    }
+
+    match /Universities/{document=**} {
+      allow read, update, write: if request.auth != null;
+      // allow write: if request.auth == "8056itcLayZY8yDbNdi7KbqXnsw2"
+    }
+
+    match /Users/{document=**} {
+      allow read, write, update: if request.auth != null;
+    }
+
+    match /UsersRequests/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /UsersUploads/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /NewUploads/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /UtilsProtected/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /userReports/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /utils/{document=**} {
+      allow read, get;
+    }
+
+    match /SeekHub/{document=**} {
+      allow read, write: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+
+    match /Test/{document=**} {
+      allow read;
+      allow write: if request.auth.uid == "8056itcLayZY8yDbNdi7KbqXnsw2";
+    }
+
+    // ----- Phase 2 AI (shared cache + per-curriculum analysis) -----
+
+    // PYQ Analyzer — 24h cache keyed by curriculum + subject.
+    match /PyqAnalysis/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // KnowledgeGraph — reserved for future Misconception Graph server-side writes.
+    match /KnowledgeGraph/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ----- Phase 3 community features -----
+
+    match /Jobs/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /Channels/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /Marketplace/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ----- Premium flags (pre-existing, was missing from live rules) -----
+    match /Premium_Users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ----- Phase 4 multi-agent progress tracker -----
+
+    // Ephemeral per-run tracker doc. Backend writes tick-marks; clients
+    // stream these live for the progressive loading UI.
+    match /AnalysisRuns/{runId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
