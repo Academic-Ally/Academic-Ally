@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/firestore_paths.dart';
 import '../../../core/providers/ai_provider.dart';
+import '../../../core/services/ai/agent_ai_service.dart';
 import '../../../models/ai_models.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -19,8 +21,6 @@ final selectedPyqSubjectProvider =
   SelectedPyqSubjectNotifier.new,
 );
 
-/// Params needed to locate a PyqAnalysis doc. Using a record so the family
-/// provider keys on all 5 fields without a custom equality class.
 typedef PyqKey = ({
   String university,
   String course,
@@ -29,8 +29,6 @@ typedef PyqKey = ({
   String subject,
 });
 
-/// Streams a cached PyqAnalysis doc if one exists. Returns null when the
-/// doc is absent so the UI can show a "run analysis" state.
 final cachedPyqAnalysisProvider =
     StreamProvider.family<PyqAnalysis?, PyqKey>((ref, key) {
   return FirebaseFirestore.instance
@@ -45,12 +43,28 @@ final cachedPyqAnalysisProvider =
       .map((doc) => doc.exists ? PyqAnalysis.fromFirestore(doc) : null);
 });
 
-/// Triggers an analysis run via [AIService.analyzePyq]. The mock fetches
-/// all existing QuestionPapers resources for the subject so the real impl
-/// (Phase 4) has a real corpus to parse.
-class PyqAnalyzerNotifier extends AsyncNotifier<void> {
+/// State for an in-flight analyzer run — exposes runId to the UI so it
+/// can subscribe to AnalysisRuns/{runId} for the progress tracker.
+class PyqRunState {
+  final String? runId;
+  final bool isLoading;
+  final Object? error;
+
+  const PyqRunState({this.runId, this.isLoading = false, this.error});
+
+  PyqRunState copyWith({String? runId, bool? isLoading, Object? error}) =>
+      PyqRunState(
+        runId: runId ?? this.runId,
+        isLoading: isLoading ?? this.isLoading,
+        error: error ?? this.error,
+      );
+
+  static const initial = PyqRunState();
+}
+
+class PyqAnalyzerNotifier extends Notifier<PyqRunState> {
   @override
-  Future<void> build() async {}
+  PyqRunState build() => PyqRunState.initial;
 
   Future<void> runAnalysis({
     required String university,
@@ -59,12 +73,14 @@ class PyqAnalyzerNotifier extends AsyncNotifier<void> {
     required String sem,
     required String subject,
   }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(currentUserProvider)?.uid;
-      if (uid == null) {
-        throw StateError('Must be signed in to run analysis.');
-      }
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) {
+      state = state.copyWith(error: StateError('Must be signed in.'));
+      return;
+    }
+    final runId = const Uuid().v4();
+    state = PyqRunState(runId: runId, isLoading: true);
+    try {
       final pyqIds = await _fetchPyqResourceIds(
         university: university,
         course: course,
@@ -72,19 +88,38 @@ class PyqAnalyzerNotifier extends AsyncNotifier<void> {
         sem: sem,
         subject: subject,
       );
-      await ref.read(aiServiceProvider).analyzePyq(
-            university: university,
-            course: course,
-            branch: branch,
-            sem: sem,
-            subject: subject,
-            pyqResourceIds: pyqIds,
-          );
-    });
+
+      final service = ref.read(aiServiceProvider);
+      if (service is AgentAIService) {
+        await service.analyzePyqWithRunId(
+          runId: runId,
+          university: university,
+          course: course,
+          branch: branch,
+          sem: sem,
+          subject: subject,
+          pyqResourceIds: pyqIds,
+        );
+      } else {
+        await service.analyzePyq(
+          university: university,
+          course: course,
+          branch: branch,
+          sem: sem,
+          subject: subject,
+          pyqResourceIds: pyqIds,
+        );
+      }
+      state = PyqRunState(runId: runId, isLoading: false);
+    } catch (exc) {
+      state = PyqRunState(runId: runId, isLoading: false, error: exc);
+    }
   }
 
-  /// Best-effort lookup of existing question-paper resource IDs under the
-  /// subject. Returns [] if the collection is empty or the query times out.
+  void reset() {
+    state = PyqRunState.initial;
+  }
+
   Future<List<String>> _fetchPyqResourceIds({
     required String university,
     required String course,
@@ -114,4 +149,6 @@ class PyqAnalyzerNotifier extends AsyncNotifier<void> {
 }
 
 final pyqAnalyzerProvider =
-    AsyncNotifierProvider<PyqAnalyzerNotifier, void>(PyqAnalyzerNotifier.new);
+    NotifierProvider<PyqAnalyzerNotifier, PyqRunState>(
+  PyqAnalyzerNotifier.new,
+);
