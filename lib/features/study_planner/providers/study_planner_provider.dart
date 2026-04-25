@@ -62,6 +62,8 @@ class StudyPlanCreator extends AsyncNotifier<String?> {
             uid: uid,
             examDate: examDate,
             subjects: subjects,
+            university: profile.university,
+            course: profile.course,
             branch: profile.branch,
             sem: profile.sem,
             weakTopics: weakTopics,

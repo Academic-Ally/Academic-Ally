@@ -32,6 +32,25 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835320418280:android:2f6d4d85e893e036435e5d",
+        "android_client_info": {
+          "package_name": "com.academically.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZSEfZ5BvE774IJARx9Kyhp4Xpd6kIfUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

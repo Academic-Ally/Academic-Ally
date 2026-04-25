@@ -58,11 +58,14 @@ final subjectResourceFlagsProvider = FutureProvider.family<
     params.sem,
   );
 
-  // Check each resource type collection for documents
+  // Check each resource type collection for documents that have a
+  // ``storageId``. ``orderBy(field)`` skips docs missing that field, so
+  // we get a free "non-null storageId" filter without an explicit where.
   final flags = <String, bool>{};
   for (final type in AppConstants.resourceTypes) {
     final snapshot = await _firestore
         .collection('$path/$type/${params.subject}')
+        .orderBy('storageId')
         .limit(1)
         .get();
     flags[type] = snapshot.docs.isNotEmpty;
@@ -71,6 +74,11 @@ final subjectResourceFlagsProvider = FutureProvider.family<
 });
 
 /// Fetches resources of a specific type for a subject.
+///
+/// Filters out legacy docs (Phase 0 React Native era) that don't have a
+/// ``storageId`` — those used Google Drive download links which are no
+/// longer reachable, so showing them in the UI just leads to the
+/// "Storage not configured yet" dead end.
 final resourcesProvider = FutureProvider.family<
     List<ResourceModel>,
     ({
@@ -91,7 +99,10 @@ final resourcesProvider = FutureProvider.family<
   );
 
   final snapshot = await _firestore.collection(path).get();
-  return snapshot.docs.map((doc) => ResourceModel.fromFirestore(doc)).toList();
+  return snapshot.docs
+      .map((doc) => ResourceModel.fromFirestore(doc))
+      .where((r) => r.storageId != null && r.storageId!.isNotEmpty)
+      .toList();
 });
 
 /// Increment view count for a resource.

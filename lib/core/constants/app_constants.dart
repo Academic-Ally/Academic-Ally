@@ -58,7 +58,7 @@ class AppConstants {
   // Each AI endpoint is a top-level function under this origin, e.g.
   //   POST {aiBackendBaseUrl}/pyq_analyze
   static const String aiBackendBaseUrl =
-      'https://us-central1-academic-ally-app.cloudfunctions.net';
+      'http://localhost:8000';
 
   // Chat limits
   static const int maxChatInitiations = 50;

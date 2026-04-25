@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -153,8 +155,20 @@ class AgentAIService implements AIService {
   String _extractErrorMessage(http.Response response) {
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final userMsg = body['error'] as String? ?? 'Unknown error';
-      final debug = body['debug_error'] as String?;
+      // FastAPI's HTTPException(detail=<dict>) wires the dict under
+      // body["detail"]; older non-FastAPI handlers return the dict
+      // at the top level. Handle both.
+      final Map<String, dynamic> source =
+          body['detail'] is Map<String, dynamic>
+              ? body['detail'] as Map<String, dynamic>
+              : body;
+      // If detail is just a string (FastAPI default for raw HTTPException),
+      // use that as the message.
+      if (body['detail'] is String) {
+        return body['detail'] as String;
+      }
+      final userMsg = source['error'] as String? ?? 'Unknown error';
+      final debug = source['debug_error'] as String?;
       if (debug != null && debug.isNotEmpty) {
         return '$userMsg\n\nDEBUG: $debug';
       }
@@ -196,32 +210,268 @@ class AgentAIService implements AIService {
     required String uid,
     required DateTime examDate,
     required List<String> subjects,
+    required String university,
+    required String course,
     required String branch,
     required String sem,
     List<String> weakTopics = const [],
     int dailyStudyMinutes = 120,
-  }) =>
-      _fallback.generateStudyPlan(
-        uid: uid,
-        examDate: examDate,
-        subjects: subjects,
-        branch: branch,
-        sem: sem,
-        weakTopics: weakTopics,
-        dailyStudyMinutes: dailyStudyMinutes,
+  }) async {
+    final runId = _uuid.v4();
+    final idToken = await _freshIdToken();
+    final uri =
+        Uri.parse('${AppConstants.aiBackendBaseUrl}/generate_study_plan');
+    final response = await _http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+          body: jsonEncode({
+            'run_id': runId,
+            'uid': uid,
+            'university': university,
+            'course': course,
+            'branch': branch,
+            'sem': sem,
+            'subjects': subjects,
+            'exam_date': examDate.toIso8601String(),
+            'daily_study_minutes': dailyStudyMinutes,
+            'weak_topics': weakTopics,
+            'force_refresh': false,
+          }),
+        )
+        .timeout(const Duration(seconds: 300));
+    if (response.statusCode != 200) {
+      throw AgentBackendException(
+        statusCode: response.statusCode,
+        message: _extractErrorMessage(response),
+        runId: runId,
       );
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final planId = body['plan_id'] as String;
+    final examDateOut = DateTime.parse(body['examDate'] as String);
+    final daysJson = body['days'] as List<dynamic>;
+    final days = daysJson.map((d) {
+      final m = d as Map<String, dynamic>;
+      final tasksJson = m['tasks'] as List<dynamic>;
+      final tasks = tasksJson
+          .map((t) {
+            final tm = t as Map<String, dynamic>;
+            return StudyTask(
+              subject: tm['subject'] as String? ?? '',
+              topic: tm['topic'] as String? ?? '',
+              durationMinutes: (tm['durationMinutes'] as num?)?.toInt() ?? 0,
+              rationale: tm['rationale'] as String? ?? '',
+              completed: tm['completed'] as bool? ?? false,
+            );
+          })
+          .toList();
+      return StudyDay(date: DateTime.parse(m['date'] as String), tasks: tasks);
+    }).toList();
+    return StudyPlan(
+      id: planId,
+      examDate: examDateOut,
+      subjects: List<String>.from(body['subjects'] as List),
+      days: days,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<AdversarialExam> generateAdversarialExam({
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+    required String subject,
+    List<String> focusTopics = const [],
+    int questionCount = 6,
+  }) async {
+    final runId = _uuid.v4();
+    final idToken = await _freshIdToken();
+    final uri = Uri.parse(
+        '${AppConstants.aiBackendBaseUrl}/generate_adversarial_exam');
+    final response = await _http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+          body: jsonEncode({
+            'run_id': runId,
+            'university': university,
+            'course': course,
+            'branch': branch,
+            'sem': sem,
+            'subject': subject,
+            'focus_topics': focusTopics,
+            'question_count': questionCount,
+            'force_refresh': false,
+          }),
+        )
+        .timeout(const Duration(seconds: 300));
+    if (response.statusCode != 200) {
+      throw AgentBackendException(
+        statusCode: response.statusCode,
+        message: _extractErrorMessage(response),
+        runId: runId,
+      );
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return AdversarialExam.fromMap(body);
+  }
+
+  /// Same as [generateAdversarialExam] but exposes the run_id so the UI
+  /// can subscribe to AnalysisRuns/{runId} for live progress before the
+  /// HTTP call returns. Mirrors the analyzePyqWithRunId pattern.
+  Future<AdversarialExamWithRunId> generateAdversarialExamWithRunId({
+    required String runId,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+    required String subject,
+    List<String> focusTopics = const [],
+    int questionCount = 6,
+  }) async {
+    final idToken = await _freshIdToken();
+    final uri = Uri.parse(
+        '${AppConstants.aiBackendBaseUrl}/generate_adversarial_exam');
+    final response = await _http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+          body: jsonEncode({
+            'run_id': runId,
+            'university': university,
+            'course': course,
+            'branch': branch,
+            'sem': sem,
+            'subject': subject,
+            'focus_topics': focusTopics,
+            'question_count': questionCount,
+            'force_refresh': false,
+          }),
+        )
+        .timeout(const Duration(seconds: 300));
+    if (response.statusCode != 200) {
+      throw AgentBackendException(
+        statusCode: response.statusCode,
+        message: _extractErrorMessage(response),
+        runId: runId,
+      );
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return AdversarialExamWithRunId(
+      exam: AdversarialExam.fromMap(body),
+      runId: runId,
+    );
+  }
 
   @override
   Future<DoubtSolution> solveDoubtFromImage({
     required String uid,
-    required String imageUrl,
-    String? subjectHint,
-  }) =>
-      _fallback.solveDoubtFromImage(
-        uid: uid,
-        imageUrl: imageUrl,
-        subjectHint: subjectHint,
+    required String imagePath,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+  }) async {
+    final result = await solveDoubtFromImageWithRunId(
+      runId: _uuid.v4(),
+      uid: uid,
+      imagePath: imagePath,
+      subject: subject,
+      university: university,
+      course: course,
+      branch: branch,
+      sem: sem,
+    );
+    return result.solution;
+  }
+
+  /// Same as [solveDoubtFromImage] but exposes the run_id and doubt_id
+  /// so the Flutter UI can subscribe to AnalysisRuns/{runId} for live
+  /// agent progress while the backend is working. Mirrors the
+  /// analyzePyqWithRunId pattern.
+  Future<DoubtSolutionWithRunId> solveDoubtFromImageWithRunId({
+    required String runId,
+    required String uid,
+    required String imagePath,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+  }) async {
+    final doubtId = _uuid.v4();
+    final storageId = 'Doubts/$uid/$doubtId.jpg';
+
+    // 1. Upload image bytes to Firebase Storage.
+    final file = File(imagePath);
+    final storageRef = FirebaseStorage.instance.ref(storageId);
+    await storageRef.putFile(file).timeout(const Duration(seconds: 30));
+
+    // 2. POST /solve_doubt with the storage path. Backend downloads via
+    //    firebase-admin storage and runs the agentic crew.
+    final idToken = await _freshIdToken();
+    final uri =
+        Uri.parse('${AppConstants.aiBackendBaseUrl}/solve_doubt');
+    final response = await _http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+          body: jsonEncode({
+            'run_id': runId,
+            'uid': uid,
+            'doubt_id': doubtId,
+            'storage_id': storageId,
+            'subject': subject,
+            'university': university,
+            'course': course,
+            'branch': branch,
+            'sem': sem,
+          }),
+        )
+        .timeout(const Duration(seconds: 300));
+
+    if (response.statusCode != 200) {
+      throw AgentBackendException(
+        statusCode: response.statusCode,
+        message: _extractErrorMessage(response),
+        runId: runId,
       );
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final stepsJson = body['steps'] as List<dynamic>? ?? const [];
+    final steps = stepsJson
+        .map((s) => SolutionStep.fromMap(s as Map<String, dynamic>))
+        .toList();
+
+    final solution = DoubtSolution(
+      id: body['doubt_id'] as String,
+      imageUrl: body['imageUrl'] as String? ?? '',
+      extractedQuestion: body['extractedQuestion'] as String? ?? '',
+      steps: steps,
+      finalAnswer: body['finalAnswer'] as String? ?? '',
+      topic: body['topic'] as String? ?? '',
+      subject: body['subject'] as String?,
+      createdAt: DateTime.now(),
+    );
+    return DoubtSolutionWithRunId(solution: solution, runId: runId);
+  }
 
   @override
   Future<ProjectGuidance> getProjectGuidance({
@@ -267,6 +517,18 @@ class PyqAnalysisWithRunId {
   const PyqAnalysisWithRunId({required this.analysis, required this.runId});
 }
 
+class AdversarialExamWithRunId {
+  final AdversarialExam exam;
+  final String runId;
+  const AdversarialExamWithRunId({required this.exam, required this.runId});
+}
+
+class DoubtSolutionWithRunId {
+  final DoubtSolution solution;
+  final String runId;
+  const DoubtSolutionWithRunId({required this.solution, required this.runId});
+}
+
 class AgentBackendException implements Exception {
   final int statusCode;
   final String message;
@@ -276,6 +538,9 @@ class AgentBackendException implements Exception {
     required this.message,
     required this.runId,
   });
+  // toString returns the user-facing message only — the status code is
+  // still accessible via .statusCode for debug/logging. UIs that print
+  // error.toString() should land on the clean backend message.
   @override
-  String toString() => 'AgentBackendException($statusCode): $message';
+  String toString() => message;
 }

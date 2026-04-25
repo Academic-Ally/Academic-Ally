@@ -44,10 +44,27 @@ abstract class AIService {
     required String uid,
     required DateTime examDate,
     required List<String> subjects,
+    required String university,
+    required String course,
     required String branch,
     required String sem,
     List<String> weakTopics = const [],
     int dailyStudyMinutes = 120,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Adversarial Examiner
+  // ---------------------------------------------------------------------------
+
+  /// Generate a quiz of trap questions designed to expose blind spots.
+  Future<AdversarialExam> generateAdversarialExam({
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+    required String subject,
+    List<String> focusTopics = const [],
+    int questionCount = 6,
   });
 
   // ---------------------------------------------------------------------------
@@ -67,12 +84,20 @@ abstract class AIService {
   // Snap-a-Doubt
   // ---------------------------------------------------------------------------
 
-  /// Accept a storage URL (R2 or Firebase Storage) for a photo of a doubt
-  /// and return an extracted question + step-by-step solution.
+  /// Run the agentic Snap-a-Doubt crew on a snapped photo.
+  ///
+  /// The implementation uploads the image bytes to Firebase Storage,
+  /// invokes the multi-agent backend (vision → retriever → solver →
+  /// validator), and persists the solution to
+  /// ``Users/{uid}/DoubtHistory/{doubtId}``.
   Future<DoubtSolution> solveDoubtFromImage({
     required String uid,
-    required String imageUrl,
-    String? subjectHint,
+    required String imagePath,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
   });
 
   // ---------------------------------------------------------------------------
