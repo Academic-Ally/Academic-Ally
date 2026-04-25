@@ -207,7 +207,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 10),
                           SizedBox(
-                            height: 110,
+                            height: 120,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               padding:
@@ -241,6 +241,14 @@ class HomeScreen extends ConsumerWidget {
                                   color: const Color(0xFF2E7D32),
                                   onTap: () =>
                                       context.push('/pyq-analyzer'),
+                                ),
+                                _AiToolCard(
+                                  icon: Icons.psychology,
+                                  title: 'Adversarial Examiner',
+                                  subtitle: 'Trap questions to expose gaps',
+                                  color: const Color(0xFFFF8181),
+                                  onTap: () =>
+                                      context.push('/adversarial-examiner'),
                                 ),
                                 _AiToolCard(
                                   icon: Icons.camera_alt,
@@ -285,7 +293,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 10),
                           SizedBox(
-                            height: 110,
+                            height: 120,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               padding:
@@ -401,49 +409,46 @@ class _AiToolCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
           child: Container(
-            width: 180,
-            padding: const EdgeInsets.all(14),
+            width: 160,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: color.withValues(alpha: 0.25)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(icon, color: color, size: 18),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isDark
-                            ? Colors.white
-                            : const Color(0xFF161719),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                const Spacer(),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isDark
+                        ? Colors.white
+                        : const Color(0xFF161719),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 10,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

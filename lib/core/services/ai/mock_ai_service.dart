@@ -100,6 +100,8 @@ class MockAIService implements AIService {
     required String uid,
     required DateTime examDate,
     required List<String> subjects,
+    required String university,
+    required String course,
     required String branch,
     required String sem,
     List<String> weakTopics = const [],
@@ -150,6 +152,43 @@ class MockAIService implements AIService {
     );
     await planRef.set(plan.toMap());
     return plan;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Adversarial Examiner
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<AdversarialExam> generateAdversarialExam({
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+    required String subject,
+    List<String> focusTopics = const [],
+    int questionCount = 6,
+  }) async {
+    await _simulateLatency();
+    final topics = focusTopics.isNotEmpty ? focusTopics : _topicsFor(subject);
+    final qs = <AdversarialQuestion>[];
+    for (var i = 0; i < questionCount; i++) {
+      final topic = topics[i % topics.length];
+      qs.add(AdversarialQuestion(
+        topic: topic,
+        question: 'Differentiate clearly between $topic and a closely related '
+            'concept, explaining edge cases.',
+        trapType: 'common confusion',
+        commonMistake: 'Students conflate $topic with the related concept.',
+        correctApproach: 'Apply the canonical definition step-by-step.',
+        expectedMarks: i.isEven ? 10 : 5,
+        difficulty: i % 3 == 0 ? 'very_hard' : 'hard',
+      ));
+    }
+    return AdversarialExam(
+      subject: subject,
+      overallFocus: 'Mock adversarial probe across $subject core topics.',
+      questions: qs,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -212,19 +251,22 @@ class MockAIService implements AIService {
   @override
   Future<DoubtSolution> solveDoubtFromImage({
     required String uid,
-    required String imageUrl,
-    String? subjectHint,
+    required String imagePath,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
   }) async {
     await _simulateLatency();
 
-    final subject = subjectHint ?? 'Mathematics';
     final ref = _firestore
         .collection('${FirestorePaths.user(uid)}/DoubtHistory')
         .doc();
 
     final solution = DoubtSolution(
       id: ref.id,
-      imageUrl: imageUrl,
+      imageUrl: imagePath,
       extractedQuestion: 'Evaluate the integral ∫(2x + 3) dx from 0 to 5.',
       steps: const [
         SolutionStep(

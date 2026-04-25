@@ -1,10 +1,15 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../config/theme.dart';
-import '../../../core/services/r2_storage_service.dart';
 import '../../../models/resource_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../bookmarks/providers/bookmarks_provider.dart';
@@ -24,6 +29,7 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
   final String sem;
   final String? storageId;
   final String resourceType;
+  final int? initialPage; // 1-indexed; null = page 1
 
   const PdfViewerScreen({
     super.key,
@@ -37,6 +43,7 @@ class PdfViewerScreen extends ConsumerStatefulWidget {
     required this.sem,
     this.storageId,
     required this.resourceType,
+    this.initialPage,
   });
 
   @override
@@ -48,6 +55,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   double _downloadProgress = 0;
   String? _localFilePath;
   bool _hasTrackedView = false;
+  PDFViewController? _pdfController;
+  bool _initialPageApplied = false;
 
   ResourceModel get _resource => ResourceModel(
         id: widget.id,
@@ -64,15 +73,29 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLocalFile();
-    _trackView();
-    _addToRecents();
+    // Defer to post-frame so any provider mutations inside _bootstrapPdf
+    // / _trackView / _addToRecents don't overlap the first build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _bootstrapPdf();
+      _trackView();
+      _addToRecents();
+    });
   }
 
-  Future<void> _checkLocalFile() async {
-    final path = await ref.read(downloadsProvider.notifier).getLocalPath(_resource);
-    if (mounted && path != null) {
-      setState(() => _localFilePath = path);
+  /// Find the cached copy if it exists; otherwise auto-download so the
+  /// PDF view renders immediately on first open (especially when a
+  /// citation tap navigates here with an ``initialPage``).
+  Future<void> _bootstrapPdf() async {
+    final cached =
+        await ref.read(downloadsProvider.notifier).getLocalPath(_resource);
+    if (!mounted) return;
+    if (cached != null) {
+      setState(() => _localFilePath = cached);
+      return;
+    }
+    if ((widget.storageId ?? '').isNotEmpty) {
+      _handleDownload();
     }
   }
 
@@ -110,32 +133,86 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       _downloadProgress = 0;
     });
 
-    final url = R2StorageService.getResourceUrl(storageId);
-    final downloadPath =
-        await ref.read(downloadsProvider.notifier).getDownloadPath(_resource);
+    try {
+      // Resolve a Firebase Storage download URL from the storageId path.
+      final url = await FirebaseStorage.instance
+          .ref(storageId)
+          .getDownloadURL()
+          .timeout(const Duration(seconds: 15));
 
-    final result = await R2StorageService.downloadFile(
-      url: url,
-      fileName: downloadPath.split('/').last,
-      onProgress: (progress) {
-        if (mounted) setState(() => _downloadProgress = progress);
-      },
-    );
+      // Stream-download to local cache so flutter_pdfview can render it.
+      final localPath = await _downloadToLocal(
+        url: url,
+        fileName: _safeLocalFileName(storageId),
+        onProgress: (progress) {
+          if (mounted) setState(() => _downloadProgress = progress);
+        },
+      );
 
-    if (mounted) {
-      if (result != null) {
-        await ref
-            .read(downloadsProvider.notifier)
-            .saveDownloadMeta(_resource, result);
-        setState(() {
-          _localFilePath = result;
-          _isDownloading = false;
-        });
-        _showSnackBar('Downloaded successfully!', isSuccess: true);
-      } else {
+      if (!mounted) return;
+      if (localPath == null) {
         setState(() => _isDownloading = false);
         _showSnackBar('Download failed. Please try again.');
+        return;
       }
+
+      // Save metadata so the rest of the app picks the local copy up.
+      await ref
+          .read(downloadsProvider.notifier)
+          .saveDownloadMeta(_resource, localPath);
+
+      setState(() {
+        _localFilePath = localPath;
+        _isDownloading = false;
+      });
+      _showSnackBar('Downloaded successfully!', isSuccess: true);
+    } catch (exc) {
+      if (!mounted) return;
+      setState(() => _isDownloading = false);
+      _showSnackBar('Download failed: $exc');
+    }
+  }
+
+  /// Filename derived from the storage path — keeps it deterministic so
+  /// repeated taps reuse the cached file.
+  String _safeLocalFileName(String storageId) {
+    final basename = storageId.split('/').last;
+    return basename.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '_');
+  }
+
+  Future<String?> _downloadToLocal({
+    required String url,
+    required String fileName,
+    void Function(double)? onProgress,
+  }) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final resourcesDir = Directory('${dir.path}/Resources');
+    if (!resourcesDir.existsSync()) {
+      resourcesDir.createSync(recursive: true);
+    }
+    final filePath = '${resourcesDir.path}/$fileName';
+
+    // Reuse cached copy if already downloaded.
+    final existing = File(filePath);
+    if (existing.existsSync() && (await existing.length()) > 0) {
+      return filePath;
+    }
+
+    try {
+      final request = http.Request('GET', Uri.parse(url));
+      final response = await http.Client().send(request);
+      final total = response.contentLength ?? 0;
+      var received = 0;
+      final bytes = <int>[];
+      await for (final chunk in response.stream) {
+        bytes.addAll(chunk);
+        received += chunk.length;
+        if (total > 0) onProgress?.call(received / total);
+      }
+      await File(filePath).writeAsBytes(bytes);
+      return filePath;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -459,39 +536,36 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }
 
   Widget _buildPdfContent() {
-    // TODO: Replace with flutter_pdfview when storage is connected
-    // For now show a placeholder indicating the file is downloaded
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.picture_as_pdf,
-                size: 80, color: AppTheme.primaryColor),
-            const SizedBox(height: 20),
-            Text(
-              widget.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'PDF is available locally.',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _localFilePath ?? '',
-              style: TextStyle(color: Colors.grey[400], fontSize: 11),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    final initial = (widget.initialPage ?? 1).clamp(1, 100000);
+    return PDFView(
+      filePath: _localFilePath!,
+      // flutter_pdfview's defaultPage is 0-indexed.
+      defaultPage: initial - 1,
+      autoSpacing: true,
+      pageFling: true,
+      onRender: (_) {
+        // Some platforms ignore defaultPage on first render — re-apply
+        // once the PDF reports it's ready.
+        if (!_initialPageApplied && _pdfController != null && initial > 1) {
+          _pdfController!.setPage(initial - 1);
+          _initialPageApplied = true;
+        }
+      },
+      onViewCreated: (controller) {
+        _pdfController = controller;
+        if (!_initialPageApplied && initial > 1) {
+          // Defer slightly so the controller is fully attached.
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted) {
+              controller.setPage(initial - 1);
+              _initialPageApplied = true;
+            }
+          });
+        }
+      },
+      onError: (error) {
+        if (mounted) _showSnackBar('PDF error: $error');
+      },
     );
   }
 

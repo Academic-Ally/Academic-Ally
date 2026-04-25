@@ -46,12 +46,26 @@ class GeminiAIService implements AIService {
     required String uid,
     required DateTime examDate,
     required List<String> subjects,
+    required String university,
+    required String course,
     required String branch,
     required String sem,
     List<String> weakTopics = const [],
     int dailyStudyMinutes = 120,
   }) =>
       _notYet('generateStudyPlan');
+
+  @override
+  Future<AdversarialExam> generateAdversarialExam({
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
+    required String subject,
+    List<String> focusTopics = const [],
+    int questionCount = 6,
+  }) =>
+      _notYet('generateAdversarialExam');
 
   @override
   Future<PyqAnalysis> analyzePyq({
@@ -67,8 +81,12 @@ class GeminiAIService implements AIService {
   @override
   Future<DoubtSolution> solveDoubtFromImage({
     required String uid,
-    required String imageUrl,
-    String? subjectHint,
+    required String imagePath,
+    required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
   }) =>
       _notYet('solveDoubtFromImage');
 

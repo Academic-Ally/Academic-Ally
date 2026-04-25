@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/firestore_paths.dart';
 import '../../../core/providers/ai_provider.dart';
+import '../../../core/services/ai/agent_ai_service.dart';
 import '../../../models/ai_models.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -20,38 +22,95 @@ final doubtHistoryProvider = StreamProvider<List<DoubtSolution>>((ref) {
           snap.docs.map((d) => DoubtSolution.fromFirestore(d)).toList());
 });
 
-/// Submits an image to [AIService.solveDoubtFromImage] and returns the
-/// resulting solution. Phase 2 uses the local file path as the "URL" since
-/// the mock ignores the actual bytes; Phase 4 will upload to Storage first.
-class DoubtSolverNotifier extends AsyncNotifier<DoubtSolution?> {
+/// Subject the user has selected for the next doubt.
+class SelectedDoubtSubjectNotifier extends Notifier<String?> {
   @override
-  Future<DoubtSolution?> build() async => null;
+  String? build() => null;
+  void set(String? subject) => state = subject;
+}
+
+final selectedDoubtSubjectProvider =
+    NotifierProvider<SelectedDoubtSubjectNotifier, String?>(
+  SelectedDoubtSubjectNotifier.new,
+);
+
+/// State for an in-flight Snap-a-Doubt run, exposing run_id so the UI
+/// can subscribe to AnalysisRuns/{runId} for the live agent checkmarks.
+class DoubtRunState {
+  final String? runId;
+  final bool isLoading;
+  final DoubtSolution? result;
+  final Object? error;
+
+  const DoubtRunState({
+    this.runId,
+    this.isLoading = false,
+    this.result,
+    this.error,
+  });
+
+  static const initial = DoubtRunState();
+}
+
+class DoubtSolverNotifier extends Notifier<DoubtRunState> {
+  @override
+  DoubtRunState build() => DoubtRunState.initial;
 
   Future<void> solve({
     required String imagePath,
-    String? subjectHint,
+    required String subject,
   }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(currentUserProvider)?.uid;
-      if (uid == null) {
-        throw StateError('Must be signed in to ask a doubt.');
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) {
+      state = DoubtRunState(error: StateError('Must be signed in.'));
+      return;
+    }
+    final profile = ref.read(userProfileProvider).value;
+    if (profile == null) {
+      state = DoubtRunState(error: StateError('Profile not loaded yet.'));
+      return;
+    }
+    final runId = const Uuid().v4();
+    state = DoubtRunState(runId: runId, isLoading: true);
+    try {
+      final service = ref.read(aiServiceProvider);
+      DoubtSolution solution;
+      if (service is AgentAIService) {
+        final res = await service.solveDoubtFromImageWithRunId(
+          runId: runId,
+          uid: uid,
+          imagePath: imagePath,
+          subject: subject,
+          university: profile.university,
+          course: profile.course,
+          branch: profile.branch,
+          sem: profile.sem,
+        );
+        solution = res.solution;
+      } else {
+        solution = await service.solveDoubtFromImage(
+          uid: uid,
+          imagePath: imagePath,
+          subject: subject,
+          university: profile.university,
+          course: profile.course,
+          branch: profile.branch,
+          sem: profile.sem,
+        );
       }
-      return await ref.read(aiServiceProvider).solveDoubtFromImage(
-            uid: uid,
-            imageUrl: imagePath,
-            subjectHint: subjectHint,
-          );
-    });
+      state = DoubtRunState(runId: runId, isLoading: false, result: solution);
+    } catch (exc) {
+      state = DoubtRunState(runId: runId, isLoading: false, error: exc);
+    }
   }
 
   void reset() {
-    state = const AsyncValue.data(null);
+    state = DoubtRunState.initial;
   }
 }
 
 final doubtSolverProvider =
-    AsyncNotifierProvider<DoubtSolverNotifier, DoubtSolution?>(
+    NotifierProvider<DoubtSolverNotifier, DoubtRunState>(
   DoubtSolverNotifier.new,
 );
 

@@ -63,7 +63,8 @@ class _AllyChatScreenState extends ConsumerState<AllyChatScreen> {
     if (_currentSessionId != null) return;
 
     final user = ref.read(currentUserProvider);
-    if (user == null) return;
+    final profile = ref.read(userProfileProvider).value;
+    if (user == null || profile == null) return;
 
     setState(() => _isInitiating = true);
 
@@ -71,9 +72,14 @@ class _AllyChatScreenState extends ConsumerState<AllyChatScreen> {
       final service = ref.read(allyBotServiceProvider);
       final sessionId = await service.initiateChat(
         uid: user.uid,
-        pdfUrl: widget.storageId ?? '',
+        resourceId: widget.resourceId ?? '',
+        storageId: widget.storageId ?? '',
         resourceName: widget.resourceName ?? '',
         subject: widget.subject ?? '',
+        university: profile.university,
+        course: profile.course,
+        branch: profile.branch,
+        sem: profile.sem,
       );
 
       if (mounted && sessionId != null) {
@@ -112,15 +118,10 @@ class _AllyChatScreenState extends ConsumerState<AllyChatScreen> {
     setState(() => _isSending = true);
 
     try {
-      final session = ref
-          .read(chatSessionProvider(_currentSessionId!))
-          .value;
-
       final service = ref.read(allyBotServiceProvider);
       await service.sendMessage(
         uid: user.uid,
         sessionId: _currentSessionId!,
-        sourceId: session?.sourceId ?? '',
         message: text,
       );
 

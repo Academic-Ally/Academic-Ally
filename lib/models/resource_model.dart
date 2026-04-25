@@ -41,29 +41,53 @@ class ResourceModel {
 
   factory ResourceModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    // Legacy docs from the React Native era store numeric fields as
+    // doubles (e.g. views: 1.0), so coerce defensively rather than
+    // casting blindly.
     return ResourceModel(
       id: doc.id,
       name: data['name'] ?? '',
       subject: data['subject'] ?? '',
       category: data['category'] ?? '',
-      rating: (data['rating'] ?? 0).toDouble(),
-      views: data['views'] ?? 0,
+      rating: (data['rating'] as num?)?.toDouble() ?? 0,
+      views: (data['views'] as num?)?.toInt() ?? 0,
       uploaderId: data['uploaderId'],
       uploaderName: data['uploaderName'],
-      size: (data['size'] ?? 0).toDouble(),
-      sem: data['sem'] ?? '',
+      size: (data['size'] as num?)?.toDouble() ?? 0,
+      sem: data['sem']?.toString() ?? '',
       branch: data['branch'] ?? data['department'] ?? '',
       course: data['course'],
       university: data['university'],
-      date: data['date'] is Timestamp
-          ? (data['date'] as Timestamp).toDate()
-          : data['date'] is int
-              ? DateTime.fromMillisecondsSinceEpoch(data['date'])
-              : null,
-      units: data['units'] ?? [],
+      date: _parseDate(data['date']),
+      units: _parseUnits(data['units']),
       storageId: data['storageId'],
       did: data['did'],
     );
+  }
+
+  static List<dynamic> _parseUnits(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) return raw;
+    // Legacy docs sometimes stored units as a comma-separated string.
+    if (raw is String) {
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return const [];
+      return trimmed.split(RegExp(r'[,;]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    }
+    return const [];
+  }
+
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Timestamp) return raw.toDate();
+    if (raw is num) {
+      // Legacy docs store epoch millis as int OR double.
+      return DateTime.fromMillisecondsSinceEpoch(raw.toInt());
+    }
+    if (raw is String) {
+      return DateTime.tryParse(raw);
+    }
+    return null;
   }
 
   Map<String, dynamic> toFirestore() {

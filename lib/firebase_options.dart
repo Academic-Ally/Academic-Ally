@@ -24,13 +24,15 @@ class DefaultFirebaseOptions {
     storageBucket: 'academic-ally-app.appspot.com',
   );
 
-  // iOS config placeholder — fill when you have a Mac to build iOS
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: '',
-    appId: '',
+    apiKey: 'AIzaSyA1M1aMbHIlVfPA54iNPGrBgexXQdVnpDQ',
+    appId: '1:835320418280:ios:92112f005dbcf0ea435e5d',
     messagingSenderId: '835320418280',
     projectId: 'academic-ally-app',
     storageBucket: 'academic-ally-app.appspot.com',
+    androidClientId: '835320418280-0bl4p0eqorfmu9cb0cualod1onlmltdi.apps.googleusercontent.com',
     iosBundleId: 'com.academically',
   );
+
+  // iOS config placeholder — fill when you have a Mac to build iOS
 }

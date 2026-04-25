@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -44,99 +45,99 @@ class AllyBotService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Initiate a new chat session for a PDF.
-  /// Calls the cloud function `/chat/initiate`.
-  /// Returns the session ID.
+  ///
+  /// No external service call — we just persist a Firestore session
+  /// record with all the metadata our agentic backend needs to scope
+  /// later message turns. Returns the new session ID.
   Future<String?> initiateChat({
     required String uid,
-    required String pdfUrl,
+    required String resourceId,
+    required String storageId,
     required String resourceName,
     required String subject,
+    required String university,
+    required String course,
+    required String branch,
+    required String sem,
   }) async {
-    // Check if user has reached initiation limit
-    final userDoc = await _firestore.doc(FirestorePaths.user(uid)).get();
-    final userData = userDoc.data();
-    final initiatedChats = userData?['initiatedChats'] ?? 0;
-    final isPremium = userData?['premiumUser'] ?? false;
-
-    if (!isPremium && initiatedChats >= AppConstants.maxChatInitiations) {
+    if (resourceId.isEmpty || subject.isEmpty) {
       throw Exception(
-          'Chat initiation limit reached. Upgrade to premium for more.');
-    }
-
-    try {
-      // Call cloud function to initiate chat
-      final response = await http.post(
-        Uri.parse('${AppConstants.cloudFunctionsBaseUrl}/chat/initiate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': uid,
-          'pdfUrl': pdfUrl,
-          'resourceName': resourceName,
-          'subject': subject,
-        }),
+        'Missing PDF metadata. Open a chat from the PDF viewer or '
+        'history list.',
       );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final sourceId = data['sourceId'] as String?;
-
-        if (sourceId != null) {
-          // Create local Firestore record
-          final docRef = _firestore
-              .collection(FirestorePaths.userInitializedPdfs(uid))
-              .doc();
-
-          await docRef.set({
-            'sourceId': sourceId,
-            'url': pdfUrl,
-            'resourceName': resourceName,
-            'subject': subject,
-            'conversations': [],
-            'createdAt': FieldValue.serverTimestamp(),
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
-
-          // Increment initiated chats counter
-          await _firestore.doc(FirestorePaths.user(uid)).update({
-            'initiatedChats': FieldValue.increment(1),
-          });
-
-          return docRef.id;
-        }
-      }
-
-      throw Exception('Failed to initiate chat. Please try again.');
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Network error. Please check your connection.');
     }
+
+    final docRef = _firestore
+        .collection(FirestorePaths.userInitializedPdfs(uid))
+        .doc();
+
+    await docRef.set({
+      // Stable identifiers our /chat_about_pdf endpoint needs
+      'resourceId': resourceId,
+      'storageId': storageId,
+      'university': university,
+      'course': course,
+      'branch': branch,
+      'sem': sem,
+      'subject': subject,
+      // Display fields the chat history list reads
+      'resourceName': resourceName,
+      'url': storageId, // legacy `url` slot — keeps existing list UI working
+      // Legacy field retained for backward-compat with the old list UI;
+      // use resourceId for any new logic.
+      'sourceId': resourceId,
+      'conversations': <Map<String, dynamic>>[],
+      'createdAt': FieldValue.serverTimestamp(),
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
+
+    return docRef.id;
   }
 
   /// Send a message in an existing chat session.
-  /// Calls the cloud function `/chat/message`.
+  ///
+  /// Posts to the agentic backend `/chat_about_pdf` endpoint, which
+  /// runs a RAG-grounded LLM call scoped to the session's PDF.
   Future<String> sendMessage({
     required String uid,
     required String sessionId,
-    required String sourceId,
     required String message,
   }) async {
-    // Check daily message limit
-    final userDoc = await _firestore.doc(FirestorePaths.user(uid)).get();
-    final userData = userDoc.data();
-    final messageCount = userData?['messageCount'] ?? 0;
-    final isPremium = userData?['premiumUser'] ?? false;
-    final limit = isPremium
-        ? AppConstants.dailyMessageLimitPremium
-        : AppConstants.dailyMessageLimitRegular;
-
-    if (messageCount >= limit) {
-      throw Exception('Daily message limit reached ($limit messages/day).');
-    }
-
     final sessionRef =
         _firestore.doc(FirestorePaths.userInitializedPdf(uid, sessionId));
+    final snap = await sessionRef.get();
+    if (!snap.exists) {
+      throw Exception('Chat session no longer exists.');
+    }
+    final data = snap.data() as Map<String, dynamic>;
 
-    // Add user message to conversations
+    final resourceId = data['resourceId'] as String? ??
+        data['sourceId'] as String? ??
+        '';
+    final subject = data['subject'] as String? ?? '';
+    final university = data['university'] as String? ?? '';
+    final course = data['course'] as String? ?? '';
+    final branch = data['branch'] as String? ?? '';
+    final sem = data['sem'] as String? ?? '';
+    if (resourceId.isEmpty || subject.isEmpty) {
+      throw Exception(
+        'This chat session is missing PDF metadata. Start a new chat '
+        'from the PDF viewer.',
+      );
+    }
+
+    // Pull the most recent turns from the session for context.
+    final convs = (data['conversations'] as List<dynamic>? ?? const []);
+    final priorTurns = convs
+        .map((c) => c as Map<String, dynamic>)
+        .where((c) => (c['message'] ?? '').toString().isNotEmpty)
+        .map((c) => {
+              'sender': c['sender'] ?? 'user',
+              'message': c['message'] ?? '',
+            })
+        .toList();
+
+    // Append the user's new message to the conversation log.
     await sessionRef.update({
       'conversations': FieldValue.arrayUnion([
         {
@@ -149,48 +150,58 @@ class AllyBotService {
       'lastUpdated': FieldValue.serverTimestamp(),
     });
 
-    try {
-      // Call cloud function
-      final response = await http.post(
-        Uri.parse('${AppConstants.cloudFunctionsBaseUrl}/chat/message'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': uid,
-          'sourceId': sourceId,
-          'message': message,
-        }),
-      );
+    // Call our backend.
+    final idToken =
+        await FirebaseAuth.instance.currentUser?.getIdToken(false) ?? '';
+    final response = await http.post(
+      Uri.parse('${AppConstants.aiBackendBaseUrl}/chat_about_pdf'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode({
+        'uid': uid,
+        'university': university,
+        'course': course,
+        'branch': branch,
+        'sem': sem,
+        'subject': subject,
+        'resource_id': resourceId,
+        'question': message,
+        'prior_turns': priorTurns,
+      }),
+    ).timeout(const Duration(seconds: 60));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final botReply = data['message'] as String? ?? 'No response received.';
-
-        // Add bot reply to conversations
-        await sessionRef.update({
-          'conversations': FieldValue.arrayUnion([
-            {
-              'sender': 'AllyBot',
-              'message': botReply,
-              'date': Timestamp.now(),
-              'loading': false,
-            }
-          ]),
-          'lastUpdated': FieldValue.serverTimestamp(),
-        });
-
-        // Increment message count
-        await _firestore.doc(FirestorePaths.user(uid)).update({
-          'messageCount': FieldValue.increment(1),
-        });
-
-        return botReply;
-      }
-
-      throw Exception('Failed to get response. Please try again.');
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Network error. Please check your connection.');
+    if (response.statusCode != 200) {
+      String msg = 'Failed to get response. Please try again.';
+      try {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final detail = body['detail'];
+        if (detail is Map && detail['error'] is String) {
+          msg = detail['error'] as String;
+        } else if (body['error'] is String) {
+          msg = body['error'] as String;
+        }
+      } catch (_) {}
+      throw Exception(msg);
     }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final reply = body['reply'] as String? ?? '(no reply)';
+
+    await sessionRef.update({
+      'conversations': FieldValue.arrayUnion([
+        {
+          'sender': 'AllyBot',
+          'message': reply,
+          'date': Timestamp.now(),
+          'loading': false,
+        }
+      ]),
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
+
+    return reply;
   }
 
   /// Delete a chat session.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/adversarial_examiner/screens/adversarial_examiner_screen.dart';
 import '../features/allybot/screens/ally_chat_screen.dart';
 import '../features/allybot/screens/allybot_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
@@ -177,6 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ? Uri.decodeComponent(q['storageId']!)
                 : null,
             resourceType: q['type'] ?? 'Notes',
+            initialPage: int.tryParse(q['page'] ?? ''),
           );
         },
       ),
@@ -248,6 +250,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/pyq-analyzer',
         builder: (context, state) => const PyqAnalyzerScreen(),
+      ),
+      GoRoute(
+        path: '/adversarial-examiner',
+        builder: (context, state) => const AdversarialExaminerScreen(),
       ),
       GoRoute(
         path: '/snap-doubt',

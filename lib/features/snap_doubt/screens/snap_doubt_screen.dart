@@ -2,12 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../config/theme.dart';
 import '../../../models/ai_models.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../pyq_analyzer/providers/analysis_run_provider.dart';
+import '../../resources/providers/resources_provider.dart';
 import '../providers/snap_doubt_provider.dart';
 
 /// Main Snap-a-Doubt screen: shows history list + FAB to capture a new doubt.
@@ -64,6 +67,12 @@ class SnapDoubtScreen extends ConsumerWidget {
   }
 
   Future<void> _showCaptureSheet(BuildContext context, WidgetRef ref) async {
+    // 1. Pick subject first — backend's RAG search needs it.
+    final subject = await _pickSubject(context, ref);
+    if (subject == null) return;
+
+    if (!context.mounted) return;
+    // 2. Pick image source
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.white,
@@ -101,16 +110,81 @@ class SnapDoubtScreen extends ConsumerWidget {
     if (picked == null) return;
 
     if (!context.mounted) return;
-    await _showSolveSheet(context, ref, picked.path);
+    await _showSolveSheet(context, ref, picked.path, subject);
+  }
+
+  Future<String?> _pickSubject(BuildContext context, WidgetRef ref) async {
+    final subjects = await ref.read(recommendedSubjectsProvider.future);
+    if (subjects.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No subjects in your curriculum yet.')),
+        );
+      }
+      return null;
+    }
+    if (!context.mounted) return null;
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.school, color: AppTheme.primaryColor),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Which subject is your doubt from?',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView(
+                shrinkWrap: true,
+                children: subjects
+                    .map(
+                      (s) => ListTile(
+                        title: Text(s.subject),
+                        onTap: () => Navigator.pop(context, s.subject),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showSolveSheet(
     BuildContext context,
     WidgetRef ref,
     String imagePath,
+    String subject,
   ) async {
-    ref.read(doubtSolverProvider.notifier).reset();
-    ref.read(doubtSolverProvider.notifier).solve(imagePath: imagePath);
+    // Defer the state mutations to a microtask so they don't fire during
+    // the same frame where the modal is mounting. Riverpod 3.x flags
+    // synchronous provider mutations that overlap a widget build phase.
+    final notifier = ref.read(doubtSolverProvider.notifier);
+    Future.microtask(() {
+      notifier.reset();
+      notifier.solve(imagePath: imagePath, subject: subject);
+    });
 
     await showModalBottomSheet<void>(
       context: context,
@@ -325,7 +399,7 @@ class _SolveSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final solver = ref.watch(doubtSolverProvider);
+    final state = ref.watch(doubtSolverProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -338,43 +412,44 @@ class _SolveSheet extends ConsumerWidget {
           borderRadius:
               const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: solver.when(
-          loading: () => _loadingBody(scrollController, imagePath),
-          error: (e, _) => _errorBody(scrollController, e.toString()),
-          data: (solution) {
-            if (solution == null) return _loadingBody(scrollController, imagePath);
-            return _SolutionBody(
-              doubt: solution,
-              scrollController: scrollController,
-              showImage: false,
-            );
-          },
-        ),
+        child: _buildBody(scrollController, state),
       ),
     );
   }
 
-  Widget _loadingBody(ScrollController c, String path) {
+  Widget _buildBody(ScrollController c, DoubtRunState state) {
+    if (state.error != null) {
+      return _errorBody(c, state.error.toString());
+    }
+    if (state.result != null) {
+      return _SolutionBody(
+        doubt: state.result!,
+        scrollController: c,
+        showImage: false,
+      );
+    }
+    // Loading: show image + live agent checkmarks (or generic spinner if no run_id)
+    return _loadingBody(c, imagePath, state.runId);
+  }
+
+  Widget _loadingBody(ScrollController c, String path, String? runId) {
     return ListView(
       controller: c,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         _handle(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Center(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.file(File(path), width: 220, fit: BoxFit.contain),
+            child: Image.file(File(path), width: 200, fit: BoxFit.contain),
           ),
         ),
-        const SizedBox(height: 32),
-        const Center(child: CircularProgressIndicator()),
-        const SizedBox(height: 16),
-        Center(
-          child: Text(
-            'Reading the problem and working it out…',
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
-          ),
-        ),
+        const SizedBox(height: 24),
+        if (runId != null)
+          _AgentChecklist(runId: runId)
+        else
+          const Center(child: CircularProgressIndicator()),
         const SizedBox(height: 24),
       ],
     );
@@ -395,6 +470,87 @@ class _SolveSheet extends ConsumerWidget {
           style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
         ),
       ],
+    );
+  }
+}
+
+class _AgentChecklist extends ConsumerWidget {
+  final String runId;
+  const _AgentChecklist({required this.runId});
+
+  static const _agents = [
+    ('vision', 'Vision Extractor'),
+    ('retriever', 'Notes Retriever'),
+    ('solver', 'Step Solver'),
+    ('validator', 'Solution Validator'),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final runAsync = ref.watch(analysisRunProvider(runId));
+    return runAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Text(
+        'Run unavailable: $e',
+        style: GoogleFonts.poppins(fontSize: 12),
+      ),
+      data: (run) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '4 agents working on your doubt…',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ..._agents.map((a) {
+              final done = run?.isDone(a.$1) ?? false;
+              final failed = run?.isFailedAgent(a.$1) ?? false;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      failed
+                          ? Icons.error
+                          : done
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                      color: failed
+                          ? const Color(0xFFFF0101)
+                          : done
+                              ? Colors.green
+                              : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      a.$2,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 }
@@ -499,7 +655,7 @@ class _SolutionBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         for (final step in doubt.steps)
-          _StepCard(step: step, isDark: isDark),
+          _StepCard(step: step, isDark: isDark, doubt: doubt),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
@@ -550,8 +706,36 @@ class _SolutionBody extends StatelessWidget {
 class _StepCard extends StatelessWidget {
   final SolutionStep step;
   final bool isDark;
+  final DoubtSolution doubt;
 
-  const _StepCard({required this.step, required this.isDark});
+  const _StepCard({
+    required this.step,
+    required this.isDark,
+    required this.doubt,
+  });
+
+  void _openCitation(BuildContext context, SolutionCitation citation) {
+    final storageId = citation.storageId;
+    if (storageId == null || storageId.isEmpty) return;
+
+    final params = <String, String>{
+      'id': citation.resourceId ?? '',
+      'name': citation.filename,
+      'subject': doubt.subject ?? '',
+      'category': citation.category ?? 'Notes',
+      'university': '',
+      'course': '',
+      'branch': '',
+      'sem': '',
+      'storageId': storageId,
+      'type': citation.category ?? 'Notes',
+      'page': '${citation.pageStart}',
+    };
+    final qs = params.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    context.push('/pdf-viewer?$qs');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -597,6 +781,21 @@ class _StepCard extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
+                if (step.citations.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: step.citations
+                        .map((c) => _CitationChip(
+                              citation: c,
+                              onTap: c.isClickable
+                                  ? () => _openCitation(context, c)
+                                  : null,
+                            ))
+                        .toList(),
+                  ),
+                ],
                 if (step.latex != null) ...[
                   const SizedBox(height: 6),
                   Container(
@@ -634,3 +833,55 @@ Widget _handle() => Center(
         ),
       ),
     );
+
+class _CitationChip extends StatelessWidget {
+  final SolutionCitation citation;
+  final VoidCallback? onTap;
+
+  const _CitationChip({required this.citation, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final clickable = onTap != null;
+    final color = clickable ? AppTheme.primaryColor : Colors.grey;
+    return Material(
+      color: color.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                clickable ? Icons.menu_book_rounded : Icons.menu_book_outlined,
+                size: 13,
+                color: color,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  '${citation.filename}  ·  ${citation.pageLabel}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (clickable) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.open_in_new, size: 12, color: color),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
