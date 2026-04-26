@@ -54,11 +54,14 @@ class AppConstants {
   static const String cloudFunctionsBaseUrl =
       'https://us-central1-academic-ally-app.cloudfunctions.net';
 
-  // Python AI backend base URL (Firebase Functions Gen 2 / us-central1)
-  // Each AI endpoint is a top-level function under this origin, e.g.
-  //   POST {aiBackendBaseUrl}/pyq_analyze
+  // Python AI backend base URL.
+  // 10.0.2.2 is the Android emulator's NAT alias for the host's 127.0.0.1,
+  // letting the app reach the local FastAPI backend running on the dev
+  // machine. For iOS simulator or `flutter run -d windows`, use
+  // 'http://localhost:8000'. For a physical device on the same Wi-Fi, use
+  // the host's LAN IP (and bind uvicorn with --host 0.0.0.0).
   static const String aiBackendBaseUrl =
-      'http://localhost:8000';
+      'http://10.0.2.2:8000';
 
   // Chat limits
   static const int maxChatInitiations = 50;

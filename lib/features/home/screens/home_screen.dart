@@ -214,25 +214,11 @@ class HomeScreen extends ConsumerWidget {
                                   const EdgeInsets.symmetric(horizontal: 20),
                               children: [
                                 _AiToolCard(
-                                  icon: Icons.insights,
-                                  title: 'Knowledge Map',
-                                  subtitle: 'Track your topic mastery',
-                                  color: AppTheme.primaryColor,
-                                  onTap: () => context.push('/knowledge-map'),
-                                ),
-                                _AiToolCard(
                                   icon: Icons.event_note,
                                   title: 'Study Planner',
                                   subtitle: 'Personalized exam prep',
                                   color: AppTheme.tertiaryColor,
                                   onTap: () => context.push('/study-planner'),
-                                ),
-                                _AiToolCard(
-                                  icon: Icons.widgets_outlined,
-                                  title: 'Gen UI',
-                                  subtitle: 'AI picks the layout',
-                                  color: const Color(0xFF9C27B0),
-                                  onTap: () => context.push('/gen-ui'),
                                 ),
                                 _AiToolCard(
                                   icon: Icons.find_in_page,
@@ -257,29 +243,21 @@ class HomeScreen extends ConsumerWidget {
                                   color: const Color(0xFFE91E63),
                                   onTap: () => context.push('/snap-doubt'),
                                 ),
-                                _AiToolCard(
-                                  icon: Icons.lightbulb_outline,
-                                  title: 'Project Copilot',
-                                  subtitle: 'Major/minor project aid',
-                                  color: const Color(0xFFF57C00),
-                                  onTap: () =>
-                                      context.push('/project-copilot'),
-                                ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          // Explore section (Phase 3 features)
+                          // Coming Soon section (Phase 3 features)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Row(
                               children: [
-                                const Icon(Icons.explore,
+                                const Icon(Icons.schedule,
                                     size: 18, color: AppTheme.primaryColor),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Explore',
+                                  'Coming Soon...',
                                   style: TextStyle(
                                     color: isDark
                                         ? Colors.white
