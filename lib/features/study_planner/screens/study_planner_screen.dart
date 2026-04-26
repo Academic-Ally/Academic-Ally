@@ -45,7 +45,7 @@ class StudyPlannerScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _buildError(e.toString()),
         data: (plans) {
-          if (plans.isEmpty) return _buildEmpty();
+          if (plans.isEmpty) return _buildEmpty(context);
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: plans.length,
@@ -56,7 +56,7 @@ class StudyPlannerScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -81,7 +81,7 @@ class StudyPlannerScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.4,
               ),
             ),
@@ -153,7 +153,7 @@ class _PlanCard extends ConsumerWidget {
                   plan.subjects.join(' · '),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: context.mutedText,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

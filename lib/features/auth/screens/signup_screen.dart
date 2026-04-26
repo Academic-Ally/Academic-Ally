@@ -91,6 +91,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formBg = isDark ? AppTheme.darkScaffoldBg : const Color(0xFFF1F1FA);
+    final headingColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
 
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
@@ -112,9 +116,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF1F1FA),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: formBg,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -127,13 +131,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'Create Your Account.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 30,
-                            color: Color(0xFF161719),
+                            color: headingColor,
                             height: 1.4,
                           ),
                         ),
@@ -279,17 +283,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     TextInputType? keyboardType,
     bool obscureText = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
+    final iconColor =
+        isDark ? AppTheme.darkOnSurfaceMuted : const Color(0xFF161719);
+    final hintColor =
+        isDark ? AppTheme.darkOnSurfaceFaint : const Color(0xFF808080);
+    final fillColor =
+        isDark ? AppTheme.darkSurfaceElevated : const Color(0xFFF1F1FA);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(fontSize: 16, color: Color(0xFF161719)),
+      style: TextStyle(fontSize: 16, color: textColor),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFF161719), size: 24),
+        prefixIcon: Icon(icon, color: iconColor, size: 24),
         hintText: placeholder,
-        hintStyle: const TextStyle(color: Color(0xFF808080)),
+        hintStyle: TextStyle(color: hintColor),
         filled: true,
-        fillColor: const Color(0xFFF1F1FA),
+        fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -324,15 +338,25 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor =
+        isDark ? AppTheme.darkOnSurfaceMuted : const Color(0xFF161719);
+    final fillColor =
+        isDark ? AppTheme.darkSurfaceElevated : const Color(0xFFF1F1FA);
+    final textColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F1FA),
+        color: fillColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
+        style: TextStyle(fontSize: 16, color: textColor),
+        dropdownColor: fillColor,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: const Color(0xFF161719), size: 24),
+          prefixIcon: Icon(icon, color: iconColor, size: 24),
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),

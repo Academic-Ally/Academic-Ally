@@ -151,7 +151,7 @@ class _ChannelDetailScreenState extends ConsumerState<ChannelDetailScreen> {
                       child: Text(
                         'Be the first to say something 👋',
                         style: GoogleFonts.poppins(
-                            fontSize: 13, color: Colors.grey[600]),
+                            fontSize: 13, color: context.mutedText),
                       ),
                     ),
                   );
@@ -270,7 +270,7 @@ class _MessageBubble extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey[600],
+                  color: context.mutedText,
                 ),
               ),
             ),
@@ -306,7 +306,7 @@ class _MessageBubble extends StatelessWidget {
                           fontSize: 9,
                           color: isMine
                               ? Colors.white.withValues(alpha: 0.7)
-                              : Colors.grey[500],
+                              : context.faintText,
                         ),
                       ),
                     ],
@@ -359,7 +359,7 @@ class _Composer extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Message…',
                   hintStyle: GoogleFonts.poppins(
-                      fontSize: 13, color: Colors.grey[500]),
+                      fontSize: 13, color: context.faintText),
                   filled: true,
                   fillColor: isDark ? Colors.grey[850] : Colors.white,
                   contentPadding: const EdgeInsets.symmetric(

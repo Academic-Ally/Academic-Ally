@@ -45,7 +45,7 @@ class ProjectCopilotScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _error(e.toString()),
         data: (projects) {
-          if (projects.isEmpty) return _empty();
+          if (projects.isEmpty) return _empty(context);
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: projects.length,
@@ -57,7 +57,7 @@ class ProjectCopilotScreen extends ConsumerWidget {
     );
   }
 
-  Widget _empty() {
+  Widget _empty(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -80,7 +80,7 @@ class ProjectCopilotScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.4,
               ),
             ),
@@ -148,7 +148,7 @@ class _ProjectCard extends ConsumerWidget {
                       '$phasesDone/4 phases explored',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: Colors.grey[600],
+                        color: context.mutedText,
                       ),
                     ),
                   ],
@@ -169,7 +169,7 @@ class _ProjectCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: context.mutedText,
                     height: 1.4,
                   ),
                 ),

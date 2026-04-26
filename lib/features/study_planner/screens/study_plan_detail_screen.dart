@@ -191,7 +191,7 @@ class _DayCard extends StatelessWidget {
                     '$done / ${day.tasks.length}',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: context.mutedText,
                     ),
                   ),
                 ],
@@ -282,7 +282,7 @@ class _TaskTile extends StatelessWidget {
                       '${task.durationMinutes} min · ${task.rationale}',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: Colors.grey[600],
+                        color: context.mutedText,
                       ),
                     ),
                   ],

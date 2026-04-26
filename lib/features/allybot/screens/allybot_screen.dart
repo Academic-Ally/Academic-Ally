@@ -86,7 +86,7 @@ class AllyBotScreen extends ConsumerWidget {
                   ),
                   error: (e, _) => Center(
                     child: Text('Error: $e',
-                        style: TextStyle(color: Colors.grey[500])),
+                        style: TextStyle(color: context.faintText)),
                   ),
                   data: (sessions) {
                     if (sessions.isEmpty) {
@@ -105,7 +105,7 @@ class AllyBotScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey[500],
+                                  color: context.faintText,
                                   height: 1.5,
                                 ),
                               ),
@@ -241,7 +241,7 @@ class _ChatSessionCard extends StatelessWidget {
                     session.lastMessage,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[500],
+                      color: context.faintText,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

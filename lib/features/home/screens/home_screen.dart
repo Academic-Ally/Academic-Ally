@@ -205,38 +205,39 @@ class HomeScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 120,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
                               children: [
-                                _AiToolCard(
+                                _AiToolListTile(
                                   icon: Icons.event_note,
                                   title: 'Study Planner',
                                   subtitle: 'Personalized exam prep',
                                   color: AppTheme.tertiaryColor,
-                                  onTap: () => context.push('/study-planner'),
+                                  onTap: () =>
+                                      context.push('/study-planner'),
                                 ),
-                                _AiToolCard(
+                                const SizedBox(height: 10),
+                                _AiToolListTile(
                                   icon: Icons.find_in_page,
                                   title: 'PYQ Analyzer',
                                   subtitle: 'Predict likely questions',
                                   color: const Color(0xFF2E7D32),
-                                  onTap: () =>
-                                      context.push('/pyq-analyzer'),
+                                  onTap: () => context.push('/pyq-analyzer'),
                                 ),
-                                _AiToolCard(
+                                const SizedBox(height: 10),
+                                _AiToolListTile(
                                   icon: Icons.psychology,
                                   title: 'Adversarial Examiner',
-                                  subtitle: 'Trap questions to expose gaps',
+                                  subtitle:
+                                      'Trap questions to expose gaps',
                                   color: const Color(0xFFFF8181),
                                   onTap: () =>
                                       context.push('/adversarial-examiner'),
                                 ),
-                                _AiToolCard(
+                                const SizedBox(height: 10),
+                                _AiToolListTile(
                                   icon: Icons.camera_alt,
                                   title: 'Snap a Doubt',
                                   subtitle: 'Photo → step-by-step',
@@ -269,36 +270,33 @@ class HomeScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 120,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
                               children: [
-                                _AiToolCard(
+                                _AiToolListTile(
                                   icon: Icons.work_outline,
-                                  title: 'Jobs & Interns',
-                                  subtitle: 'Career openings',
+                                  title: 'Jobs & Internships',
+                                  subtitle: 'Career openings curated for you',
                                   color: const Color(0xFF0277BD),
                                   onTap: () => context.push('/jobs'),
                                 ),
-                                _AiToolCard(
+                                const SizedBox(height: 10),
+                                _AiToolListTile(
                                   icon: Icons.forum,
                                   title: 'Communities',
-                                  subtitle: 'Chat by topic',
+                                  subtitle: 'Chat with peers by topic',
                                   color: const Color(0xFF00897B),
-                                  onTap: () =>
-                                      context.push('/communities'),
+                                  onTap: () => context.push('/communities'),
                                 ),
-                                _AiToolCard(
+                                const SizedBox(height: 10),
+                                _AiToolListTile(
                                   icon: Icons.storefront,
                                   title: 'Marketplace',
-                                  subtitle: 'Buy/sell campus items',
+                                  subtitle: 'Buy & sell campus items',
                                   color: const Color(0xFFAD1457),
-                                  onTap: () =>
-                                      context.push('/marketplace'),
+                                  onTap: () => context.push('/marketplace'),
                                 ),
                               ],
                             ),
@@ -319,22 +317,28 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 15),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.tertiaryColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: AppTheme.tertiaryColor.withValues(alpha: 0.3),
+                                InkWell(
+                                  onTap: () => context.go('/search'),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.tertiaryColor
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppTheme.tertiaryColor
+                                            .withValues(alpha: 0.3),
+                                      ),
                                     ),
-                                  ),
-                                  child: const Text(
-                                    'All',
-                                    style: TextStyle(
-                                      color: AppTheme.tertiaryColor,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                    child: const Text(
+                                      'All',
+                                      style: TextStyle(
+                                        color: AppTheme.tertiaryColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -360,14 +364,14 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _AiToolCard extends StatelessWidget {
+class _AiToolListTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
 
-  const _AiToolCard({
+  const _AiToolListTile({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -378,58 +382,57 @@ class _AiToolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Material(
-        color: isDark ? Colors.grey[850] : Colors.white,
+    return Material(
+      color: isDark ? Colors.grey[850] : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Container(
-            width: 160,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: color.withValues(alpha: 0.25)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: color, size: 18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.20)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const Spacer(),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isDark
-                        ? Colors.white
-                        : const Color(0xFF161719),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF161719),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: context.mutedText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 10,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right,
+                  color: Color(0xFF91919F), size: 20),
+            ],
           ),
         ),
       ),
@@ -457,19 +460,19 @@ class _QuickAccessItem extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 68,
+            height: 68,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: Colors.white, size: 32),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.white70
@@ -513,7 +516,7 @@ class _RecommendedSubjects extends ConsumerWidget {
                 child: Text(
                   'No subjects found for your current semester.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  style: TextStyle(color: context.faintText, fontSize: 14),
                 ),
               ),
             ),
@@ -607,7 +610,7 @@ class _SubjectCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${subject.branch} · Sem ${subject.sem}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 12, color: context.faintText),
                   ),
                 ],
               ),

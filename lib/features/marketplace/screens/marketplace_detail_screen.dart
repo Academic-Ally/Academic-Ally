@@ -209,7 +209,7 @@ class MarketplaceDetailScreen extends ConsumerWidget {
                                       'Listed ${_fmtWhen(listing.createdAt!)}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 11,
-                                        color: Colors.grey[600],
+                                        color: context.mutedText,
                                       ),
                                     ),
                                 ],
@@ -351,7 +351,7 @@ class _ImageGallery extends StatelessWidget {
       return Container(
         height: 240,
         color: Colors.grey[200],
-        child: Icon(Icons.image_outlined, size: 72, color: Colors.grey[500]),
+        child: Icon(Icons.image_outlined, size: 72, color: context.faintText),
       );
     }
     return SizedBox(
@@ -372,7 +372,7 @@ class _ImageGallery extends StatelessWidget {
           errorBuilder: (context, _, _) => Container(
             color: Colors.grey[200],
             child: Icon(Icons.broken_image_outlined,
-                size: 48, color: Colors.grey[500]),
+                size: 48, color: context.faintText),
           ),
         ),
       ),

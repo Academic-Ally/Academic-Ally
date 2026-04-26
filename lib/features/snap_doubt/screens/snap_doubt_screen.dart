@@ -50,7 +50,7 @@ class SnapDoubtScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _error(e.toString()),
         data: (items) {
-          if (items.isEmpty) return _empty();
+          if (items.isEmpty) return _empty(context);
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: items.length,
@@ -232,7 +232,7 @@ class SnapDoubtScreen extends ConsumerWidget {
     await deleteDoubt(uid: uid, doubtId: id);
   }
 
-  Widget _empty() {
+  Widget _empty(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -255,7 +255,7 @@ class SnapDoubtScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.4,
               ),
             ),
@@ -306,7 +306,7 @@ class _DoubtCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildThumb(),
+                _buildThumb(context),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -350,7 +350,7 @@ class _DoubtCard extends StatelessWidget {
                             'Answer: ${doubt.finalAnswer}',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
-                              color: Colors.grey[600],
+                              color: context.mutedText,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -367,7 +367,7 @@ class _DoubtCard extends StatelessWidget {
     );
   }
 
-  Widget _buildThumb() {
+  Widget _buildThumb(BuildContext context) {
     final file = File(doubt.imageUrl);
     if (file.existsSync()) {
       return ClipRRect(
@@ -387,7 +387,7 @@ class _DoubtCard extends StatelessWidget {
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(Icons.image, color: Colors.grey[500]),
+      child: Icon(Icons.image, color: context.faintText),
     );
   }
 }

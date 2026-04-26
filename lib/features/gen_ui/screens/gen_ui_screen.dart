@@ -126,7 +126,7 @@ class _GenUiScreenState extends ConsumerState<GenUiScreen> {
                         hintText: 'e.g. Show me chapters for DS Unit 3',
                         hintStyle: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.grey[500],
+                          color: context.faintText,
                         ),
                         filled: true,
                         fillColor: isDark ? Colors.grey[850] : Colors.white,
@@ -179,7 +179,7 @@ class _GenUiScreenState extends ConsumerState<GenUiScreen> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.5,
               ),
             ),

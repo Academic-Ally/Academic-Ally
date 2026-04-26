@@ -170,7 +170,7 @@ class _CreateChannelScreenState extends ConsumerState<CreateChannelScreen> {
   InputDecoration _inputDecoration(bool isDark, String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+      hintStyle: GoogleFonts.poppins(fontSize: 13, color: context.faintText),
       filled: true,
       fillColor: isDark ? Colors.grey[850] : Colors.white,
       contentPadding: const EdgeInsets.all(12),

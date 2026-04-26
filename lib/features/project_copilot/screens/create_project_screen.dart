@@ -199,7 +199,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   InputDecoration _inputDecoration(bool isDark, String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 13),
+      hintStyle: GoogleFonts.poppins(color: context.faintText, fontSize: 13),
       filled: true,
       fillColor: isDark ? Colors.grey[850] : Colors.white,
       contentPadding: const EdgeInsets.all(14),

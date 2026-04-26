@@ -88,15 +88,34 @@ class RecentsScreen extends ConsumerWidget {
                             children: [
                               Icon(Icons.history,
                                   size: 80, color: Colors.grey[400]),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               Text(
-                                'No recently viewed PDFs.\nStart exploring resources!',
+                                'No recently viewed PDFs.\nOpen a resource to see it here.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey[500],
+                                  color: context.faintText,
                                   height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton.icon(
+                                onPressed: () => context.go('/search'),
+                                icon: const Icon(Icons.search, size: 18),
+                                label: const Text(
+                                  'Browse Subjects',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 22, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ],
@@ -240,7 +259,7 @@ class _RecentCard extends StatelessWidget {
                   Text(
                     '${recent.subject} · $_timeAgo',
                     style:
-                        TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        TextStyle(fontSize: 12, color: context.faintText),
                   ),
                 ],
               ),

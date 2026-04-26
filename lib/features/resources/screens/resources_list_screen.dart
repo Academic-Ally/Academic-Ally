@@ -127,7 +127,7 @@ class ResourcesListScreen extends ConsumerWidget {
                       child: Text(
                         'Error: $e',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[500]),
+                        style: TextStyle(color: context.faintText),
                       ),
                     ),
                   ),
@@ -147,7 +147,7 @@ class ResourcesListScreen extends ConsumerWidget {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey[500],
+                                  color: context.faintText,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -255,28 +255,28 @@ class _ResourceCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(Icons.visibility_outlined,
-                          size: 14, color: Colors.grey[500]),
+                          size: 14, color: context.faintText),
                       const SizedBox(width: 4),
                       Text(
                         '${resource.views}',
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500]),
+                            fontSize: 12, color: context.faintText),
                       ),
                       const SizedBox(width: 12),
                       Icon(Icons.star_outline,
-                          size: 14, color: Colors.grey[500]),
+                          size: 14, color: context.faintText),
                       const SizedBox(width: 4),
                       Text(
                         resource.rating.toStringAsFixed(1),
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500]),
+                            fontSize: 12, color: context.faintText),
                       ),
                       if (resource.units.isNotEmpty) ...[
                         const SizedBox(width: 12),
                         Text(
                           'Units: ${resource.units.join(", ")}',
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey[500]),
+                              fontSize: 12, color: context.faintText),
                         ),
                       ],
                     ],

@@ -53,7 +53,7 @@ class MarketplaceScreen extends ConsumerWidget {
           ),
         ),
         data: (listings) {
-          if (listings.isEmpty) return _empty(ref);
+          if (listings.isEmpty) return _empty(context, ref);
           return GridView.builder(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -71,7 +71,7 @@ class MarketplaceScreen extends ConsumerWidget {
     );
   }
 
-  Widget _empty(WidgetRef ref) {
+  Widget _empty(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -93,7 +93,7 @@ class MarketplaceScreen extends ConsumerWidget {
               'Post textbooks, calculators, notes, or other campus items. Or seed sample listings for demo.',
               textAlign: TextAlign.center,
               style:
-                  GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                  GoogleFonts.poppins(fontSize: 12, color: context.mutedText),
             ),
             const SizedBox(height: 20),
             OutlinedButton.icon(
@@ -136,7 +136,7 @@ class _ListingCard extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(12)),
-                child: _buildImage(),
+                child: _buildImage(context),
               ),
             ),
             Padding(
@@ -173,11 +173,11 @@ class _ListingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImage() {
+  Widget _buildImage(BuildContext context) {
     if (listing.imageUrls.isEmpty) {
       return Container(
         color: Colors.grey[200],
-        child: Icon(Icons.image_outlined, color: Colors.grey[500], size: 40),
+        child: Icon(Icons.image_outlined, color: context.faintText, size: 40),
       );
     }
     return Image.network(
@@ -192,7 +192,7 @@ class _ListingCard extends StatelessWidget {
       },
       errorBuilder: (context, _, _) => Container(
         color: Colors.grey[200],
-        child: Icon(Icons.broken_image_outlined, color: Colors.grey[500]),
+        child: Icon(Icons.broken_image_outlined, color: context.faintText),
       ),
     );
   }

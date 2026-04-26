@@ -212,7 +212,7 @@ class _AllyChatScreenState extends ConsumerState<AllyChatScreen> {
               'Type a question below to start a conversation. AllyBot will analyze the PDF and answer your questions.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.grey[500],
+                color: context.faintText,
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -236,7 +236,7 @@ class _AllyChatScreenState extends ConsumerState<AllyChatScreen> {
         child: CircularProgressIndicator(color: AppTheme.primaryColor),
       ),
       error: (e, _) => Center(
-        child: Text('Error: $e', style: TextStyle(color: Colors.grey[500])),
+        child: Text('Error: $e', style: TextStyle(color: context.faintText)),
       ),
       data: (session) {
         if (session == null) {

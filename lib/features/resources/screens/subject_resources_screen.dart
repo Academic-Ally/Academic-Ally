@@ -109,7 +109,7 @@ class SubjectResourcesScreen extends ConsumerWidget {
                       child: Text(
                         'Error loading resources: $e',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[500]),
+                        style: TextStyle(color: context.faintText),
                       ),
                     ),
                   ),

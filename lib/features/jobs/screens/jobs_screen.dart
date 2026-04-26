@@ -49,7 +49,7 @@ class JobsScreen extends ConsumerWidget {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => _error(e.toString()),
               data: (jobs) {
-                if (jobs.isEmpty) return _empty(ref, selectedFilter);
+                if (jobs.isEmpty) return _empty(context, ref, selectedFilter);
                 return ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                   itemCount: jobs.length,
@@ -92,7 +92,7 @@ class JobsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _empty(WidgetRef ref, JobType? filter) {
+  Widget _empty(BuildContext context, WidgetRef ref, JobType? filter) {
     if (filter != null) {
       return Center(
         child: Padding(
@@ -101,7 +101,7 @@ class JobsScreen extends ConsumerWidget {
             'No ${filter.label.toLowerCase()} postings right now.\nTry "All" to see everything.',
             textAlign: TextAlign.center,
             style:
-                GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+                GoogleFonts.poppins(fontSize: 13, color: context.mutedText),
           ),
         ),
       );
@@ -127,7 +127,7 @@ class JobsScreen extends ConsumerWidget {
               'Post one yourself, or seed sample listings for demo.',
               textAlign: TextAlign.center,
               style:
-                  GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                  GoogleFonts.poppins(fontSize: 12, color: context.mutedText),
             ),
             const SizedBox(height: 20),
             OutlinedButton.icon(
@@ -248,7 +248,7 @@ class _JobCard extends StatelessWidget {
                         _formatWhen(job.postedAt!),
                         style: GoogleFonts.poppins(
                           fontSize: 11,
-                          color: Colors.grey[500],
+                          color: context.faintText,
                         ),
                       ),
                   ],
@@ -273,7 +273,7 @@ class _JobCard extends StatelessWidget {
                         '${job.company} · ${job.location}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: context.mutedText,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

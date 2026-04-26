@@ -188,7 +188,7 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.5,
               ),
             ),
@@ -325,7 +325,7 @@ class _TopicCard extends StatelessWidget {
                     '$attempts attempts',
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: Colors.grey[500],
+                      color: context.faintText,
                     ),
                   ),
                 ],

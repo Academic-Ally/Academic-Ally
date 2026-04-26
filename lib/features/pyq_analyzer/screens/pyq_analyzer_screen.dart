@@ -336,7 +336,7 @@ class PyqAnalyzerScreen extends ConsumerWidget {
           Text(
             'Last analyzed ${_fmtWhen(analysis.lastAnalyzed!)}',
             style:
-                GoogleFonts.poppins(fontSize: 11, color: Colors.grey[500]),
+                GoogleFonts.poppins(fontSize: 11, color: context.faintText),
           ),
         ],
       ],
@@ -569,7 +569,7 @@ class _PredictedQuestionCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey[600],
+                  color: context.mutedText,
                 ),
               ),
               const Spacer(),
@@ -577,7 +577,7 @@ class _PredictedQuestionCard extends StatelessWidget {
                 question.topic,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
-                  color: Colors.grey[600],
+                  color: context.mutedText,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -632,7 +632,7 @@ class _ProgressPanel extends StatelessWidget {
             '5 AI agents collaborating…',
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: context.mutedText,
             ),
           ),
           const SizedBox(height: 24),
@@ -705,7 +705,7 @@ class _ProgressRow extends StatelessWidget {
                         ? const Color(0xFFFF0101)
                         : isActive
                             ? Colors.black87
-                            : Colors.grey[500],
+                            : context.faintText,
               ),
             ),
           ),

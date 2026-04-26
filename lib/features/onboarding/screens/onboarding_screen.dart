@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/providers/theme_provider.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     with SingleTickerProviderStateMixin {
-  static const Color _bgColor = Color(0xFF827FFF);
+  // Brand purple for light mode, deeper navy-purple for dark mode so the
+  // onboarding doesn't blast retinas at night while still feeling on-brand.
+  static const Color _bgColorLight = Color(0xFF827FFF);
+  static const Color _bgColorDark = Color(0xFF1A1A2E);
   static const Color _textColor = Color(0xFFF1F1FA);
 
   final PageController _pageController = PageController();
@@ -99,37 +104,56 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final isLast = _currentIndex == _slides.length - 1;
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+    final bgColor = isDark ? _bgColorDark : _bgColorLight;
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button row (top right)
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 8, 16, 0),
-                child: TextButton(
-                  onPressed: isLast ? null : _handleSkip,
-                  style: TextButton.styleFrom(
-                    foregroundColor: _textColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+            // Top bar — theme toggle on the left, Skip on the right
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () =>
+                        ref.read(themeModeProvider.notifier).toggleTheme(),
+                    tooltip: isDark
+                        ? 'Switch to light mode'
+                        : 'Switch to dark mode',
+                    icon: Icon(
+                      isDark
+                          ? Icons.wb_sunny_outlined
+                          : Icons.nightlight_round,
+                      color: _textColor,
+                      size: 22,
                     ),
                   ),
-                  child: Opacity(
-                    opacity: isLast ? 0 : 1,
-                    child: Text(
-                      'Skip',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  const Spacer(),
+                  TextButton(
+                    onPressed: isLast ? null : _handleSkip,
+                    style: TextButton.styleFrom(
+                      foregroundColor: _textColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    child: Opacity(
+                      opacity: isLast ? 0 : 1,
+                      child: Text(
+                        'Skip',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
             Expanded(
@@ -223,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       onPressed: _handleNext,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _textColor,
-                        foregroundColor: _bgColor,
+                        foregroundColor: bgColor,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

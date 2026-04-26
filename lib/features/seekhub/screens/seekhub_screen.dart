@@ -88,7 +88,7 @@ class SeekHubScreen extends ConsumerWidget {
                   ),
                   error: (e, _) => Center(
                     child: Text('Error: $e',
-                        style: TextStyle(color: Colors.grey[500])),
+                        style: TextStyle(color: context.faintText)),
                   ),
                   data: (requests) {
                     if (requests.isEmpty) {
@@ -107,7 +107,7 @@ class SeekHubScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey[500],
+                                  color: context.faintText,
                                   height: 1.5,
                                 ),
                               ),
@@ -248,7 +248,7 @@ class _RequestCard extends ConsumerWidget {
                     Text(
                       '${request.branch} | Sem ${request.sem}',
                       style: TextStyle(
-                          fontSize: 12, color: Colors.grey[500]),
+                          fontSize: 12, color: context.faintText),
                     ),
                   ],
                 ),
@@ -290,7 +290,7 @@ class _RequestCard extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             request.category,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: TextStyle(fontSize: 14, color: context.faintText),
           ),
 
           const SizedBox(height: 12),
@@ -309,7 +309,7 @@ class _RequestCard extends ConsumerWidget {
                     size: 18,
                     color: isSubscribed
                         ? AppTheme.primaryColor
-                        : Colors.grey[500],
+                        : context.faintText,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -319,7 +319,7 @@ class _RequestCard extends ConsumerWidget {
                       fontWeight: FontWeight.w500,
                       color: isSubscribed
                           ? AppTheme.primaryColor
-                          : Colors.grey[500],
+                          : context.faintText,
                     ),
                   ),
                 ],

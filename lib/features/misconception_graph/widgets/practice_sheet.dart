@@ -130,7 +130,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
           widget.node.subject,
           style: GoogleFonts.poppins(
             fontSize: 13,
-            color: Colors.grey[600],
+            color: context.mutedText,
           ),
         ),
         const SizedBox(height: 20),
@@ -192,7 +192,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
           ),
           decoration: InputDecoration(
             hintText: 'Write 1–3 sentences explaining the concept…',
-            hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
+            hintStyle: GoogleFonts.poppins(color: context.faintText),
             filled: true,
             fillColor: isDark ? Colors.grey[850] : Colors.white,
             contentPadding: const EdgeInsets.all(14),
@@ -276,7 +276,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
             'AI is analyzing your answer…',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: context.mutedText,
             ),
           ),
         ),
@@ -341,7 +341,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
           '$masteryPct% — ${result.mastery.attempts} attempts recorded',
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: context.mutedText,
           ),
         ),
         const SizedBox(height: 24),
@@ -414,7 +414,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
       children: [
         _sheetHandle(),
         const SizedBox(height: 40),
-        Icon(Icons.error_outline, size: 56, color: Colors.grey[600]),
+        Icon(Icons.error_outline, size: 56, color: context.mutedText),
         const SizedBox(height: 16),
         Text(
           'Something went wrong.',
@@ -428,7 +428,7 @@ class _PracticeSheetState extends ConsumerState<PracticeSheet> {
         Text(
           error.toString(),
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+          style: GoogleFonts.poppins(fontSize: 12, color: context.mutedText),
         ),
         const SizedBox(height: 24),
         ElevatedButton(
@@ -483,7 +483,7 @@ class _SelfAssessChip extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: selected ? color : Colors.grey[600]),
+            Icon(icon, size: 18, color: selected ? color : context.mutedText),
             const SizedBox(width: 8),
             Flexible(
               child: Text(

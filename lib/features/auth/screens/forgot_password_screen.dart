@@ -57,6 +57,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formBg = isDark ? AppTheme.darkScaffoldBg : const Color(0xFFF1F1FA);
+    final headingColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
+    final subheadingColor =
+        isDark ? AppTheme.darkOnSurfaceMuted : const Color(0xFF808080);
+    final inputTextColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
+    final inputIconColor =
+        isDark ? AppTheme.darkOnSurfaceMuted : const Color(0xFF161719);
+    final inputHintColor =
+        isDark ? AppTheme.darkOnSurfaceFaint : const Color(0xFF808080);
+    final inputFillColor =
+        isDark ? AppTheme.darkSurfaceElevated : const Color(0xFFF1F1FA);
 
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
@@ -92,9 +106,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF1F1FA),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: formBg,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -107,22 +121,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 32),
-                        const Text(
+                        Text(
                           'Reset Password',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 30,
-                            color: Color(0xFF161719),
+                            color: headingColor,
                             height: 1.4,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Enter your email to receive a password reset link',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Color(0xFF808080),
+                            color: subheadingColor,
                             fontSize: 14,
                           ),
                         ),
@@ -130,18 +144,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF161719),
+                            color: inputTextColor,
                           ),
                           decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.mail_outline,
-                                color: Color(0xFF161719), size: 24),
+                            prefixIcon: Icon(Icons.mail_outline,
+                                color: inputIconColor, size: 24),
                             hintText: 'Email',
-                            hintStyle:
-                                const TextStyle(color: Color(0xFF808080)),
+                            hintStyle: TextStyle(color: inputHintColor),
                             filled: true,
-                            fillColor: const Color(0xFFF1F1FA),
+                            fillColor: inputFillColor,
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 18),
                             border: OutlineInputBorder(

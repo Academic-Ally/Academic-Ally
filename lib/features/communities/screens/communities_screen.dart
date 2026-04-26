@@ -53,7 +53,7 @@ class CommunitiesScreen extends ConsumerWidget {
           ),
         ),
         data: (channels) {
-          if (channels.isEmpty) return _empty(ref);
+          if (channels.isEmpty) return _empty(context, ref);
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: channels.length,
@@ -65,7 +65,7 @@ class CommunitiesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _empty(WidgetRef ref) {
+  Widget _empty(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -87,7 +87,7 @@ class CommunitiesScreen extends ConsumerWidget {
               'Start a conversation or seed sample channels for demo.',
               textAlign: TextAlign.center,
               style:
-                  GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                  GoogleFonts.poppins(fontSize: 12, color: context.mutedText),
             ),
             const SizedBox(height: 20),
             OutlinedButton.icon(
@@ -178,7 +178,7 @@ class _ChannelCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: context.mutedText,
                         ),
                       ),
                     ],

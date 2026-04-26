@@ -239,7 +239,7 @@ class _ReportBottomSheetState extends ConsumerState<ReportBottomSheet> {
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[600],
+                      color: context.mutedText,
                     ),
                   ),
                 ),
@@ -306,7 +306,7 @@ class _ReportBottomSheetState extends ConsumerState<ReportBottomSheet> {
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: context.mutedText,
             ),
           ),
           const SizedBox(height: 32),

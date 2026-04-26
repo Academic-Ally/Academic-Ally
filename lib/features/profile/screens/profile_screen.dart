@@ -134,7 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Padding(
                       padding: EdgeInsets.only(
                         top: size.height * 0.05,
-                        bottom: size.height * 0.15,
+                        bottom: 24,
                       ),
                       child: Column(
                         children: [
@@ -254,7 +254,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.grey[500] : const Color(0xFF91919F),
+              color: isDark ? context.faintText : const Color(0xFF91919F),
             ),
           ),
           ...items.map((item) => InkWell(

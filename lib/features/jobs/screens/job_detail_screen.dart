@@ -104,7 +104,7 @@ class JobDetailScreen extends ConsumerWidget {
                       'Posted ${_formatWhen(job.postedAt!)}',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: Colors.grey[500],
+                        color: context.faintText,
                       ),
                     ),
                 ],
@@ -129,7 +129,7 @@ class JobDetailScreen extends ConsumerWidget {
                       '${job.company} · ${job.location}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: context.mutedText,
                       ),
                     ),
                   ),
@@ -185,7 +185,7 @@ class JobDetailScreen extends ConsumerWidget {
                   'Posted by ${job.postedByName}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: context.faintText,
                     fontStyle: FontStyle.italic,
                   ),
                 ),

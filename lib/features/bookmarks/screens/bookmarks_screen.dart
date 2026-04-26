@@ -25,7 +25,7 @@ class BookmarksScreen extends ConsumerWidget {
           child: CircularProgressIndicator(color: AppTheme.primaryColor),
         ),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: Colors.grey[500])),
+          child: Text('Error: $e', style: TextStyle(color: context.faintText)),
         ),
         data: (bookmarks) {
           if (bookmarks.isEmpty) {
@@ -42,13 +42,31 @@ class BookmarksScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'No bookmarks to show. Start bookmarking your favorite notes for easy access later!',
+                      'No bookmarks yet. Bookmark your favorite notes for quick access later.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[500],
+                        color: context.faintText,
                         height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: () => context.go('/search'),
+                      icon: const Icon(Icons.search, size: 18),
+                      label: const Text(
+                        'Browse Subjects',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 22, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ],
@@ -199,7 +217,7 @@ class _BookmarkCard extends StatelessWidget {
                     Text(
                       '${resource.category} · ${resource.branch}',
                       style: TextStyle(
-                          fontSize: 12, color: Colors.grey[500]),
+                          fontSize: 12, color: context.faintText),
                     ),
                   ],
                 ),

@@ -244,7 +244,7 @@ class _IdleView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: context.mutedText,
                 height: 1.4,
               ),
             ),

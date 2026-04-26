@@ -456,7 +456,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     'Downloading... ${(_downloadProgress * 100).toInt()}%',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: context.mutedText,
                     ),
                   ),
                 ],
@@ -600,7 +600,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   : 'PDF storage is not connected yet.\nThe PDF will be viewable once storage is configured.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.grey[500],
+                color: context.faintText,
                 fontSize: 14,
               ),
             ),

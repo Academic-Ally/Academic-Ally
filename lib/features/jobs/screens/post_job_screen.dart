@@ -253,7 +253,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle:
-            GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+            GoogleFonts.poppins(fontSize: 13, color: context.faintText),
         filled: true,
         fillColor: isDark ? Colors.grey[850] : Colors.white,
         contentPadding: const EdgeInsets.all(12),

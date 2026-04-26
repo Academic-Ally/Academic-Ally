@@ -53,6 +53,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formBg = isDark ? AppTheme.darkScaffoldBg : const Color(0xFFF1F1FA);
+    final headingColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
 
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
@@ -74,9 +78,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF1F1FA),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: formBg,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -89,13 +93,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'Please, Log In.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 30,
-                            color: Color(0xFF161719),
+                            color: headingColor,
                             height: 1.4,
                           ),
                         ),
@@ -130,7 +134,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _obscurePassword
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
-                              color: const Color(0xFF161719),
+                              color: isDark
+                                  ? AppTheme.darkOnSurfaceMuted
+                                  : const Color(0xFF161719),
                             ),
                             onPressed: () {
                               setState(
@@ -153,12 +159,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () => context.push('/forgot-password'),
-                            child: const Text(
+                            child: Text(
                               'Forgot Password?',
                               style: TextStyle(
                                 fontWeight: FontWeight.w300,
                                 fontSize: 14,
-                                color: Color(0xFF161719),
+                                color: isDark
+                                    ? AppTheme.darkOnSurfaceMuted
+                                    : const Color(0xFF161719),
                               ),
                             ),
                           ),
@@ -180,7 +188,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: AppTheme.tertiaryColor,
                           onPressed: () => context.push('/signup'),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 48),
+
+                        // Tagline — fills the dead space below the buttons
+                        // and reinforces the value prop on first launch.
+                        const Text(
+                          'Built by students, for students.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Notes · PYQs · AI tutors — all in one ally.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppTheme.darkOnSurfaceMuted
+                                : const Color(0xFF91919F),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -202,21 +234,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? AppTheme.darkOnSurface : const Color(0xFF161719);
+    final iconColor =
+        isDark ? AppTheme.darkOnSurfaceMuted : const Color(0xFF161719);
+    final hintColor =
+        isDark ? AppTheme.darkOnSurfaceFaint : const Color(0xFF808080);
+    final fillColor =
+        isDark ? AppTheme.darkSurfaceElevated : const Color(0xFFF1F1FA);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(
-        fontSize: 16,
-        color: Color(0xFF161719),
-      ),
+      style: TextStyle(fontSize: 16, color: textColor),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFF161719), size: 24),
+        prefixIcon: Icon(icon, color: iconColor, size: 24),
         suffixIcon: suffixIcon,
         hintText: placeholder,
-        hintStyle: const TextStyle(color: Color(0xFF808080)),
+        hintStyle: TextStyle(color: hintColor),
         filled: true,
-        fillColor: const Color(0xFFF1F1FA),
+        fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

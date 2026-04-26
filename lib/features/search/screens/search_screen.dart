@@ -94,6 +94,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: _FilterDropdown(
                       value: branchFilter,
                       hint: 'All Branches',
+                      icon: Icons.account_tree_outlined,
                       items: AppConstants.branches,
                       onChanged: (val) => ref
                           .read(searchBranchFilterProvider.notifier)
@@ -106,6 +107,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: _FilterDropdown(
                       value: semFilter,
                       hint: 'All Semesters',
+                      icon: Icons.school_outlined,
                       items: AppConstants.semesters,
                       displayPrefix: 'Sem ',
                       onChanged: (val) =>
@@ -127,7 +129,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         query.isEmpty && branchFilter == null && semFilter == null
                             ? 'Search for subjects across your curriculum'
                             : 'No subjects found',
-                        style: TextStyle(color: Colors.grey[500]),
+                        style: TextStyle(color: context.faintText),
                       ),
                     )
                   : ListView.builder(
@@ -164,6 +166,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 class _FilterDropdown extends StatelessWidget {
   final String? value;
   final String hint;
+  final IconData icon;
   final List<String> items;
   final String displayPrefix;
   final ValueChanged<String?> onChanged;
@@ -172,6 +175,7 @@ class _FilterDropdown extends StatelessWidget {
   const _FilterDropdown({
     required this.value,
     required this.hint,
+    required this.icon,
     required this.items,
     this.displayPrefix = '',
     required this.onChanged,
@@ -186,33 +190,49 @@ class _FilterDropdown extends StatelessWidget {
         color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          hint: Text(
-            hint,
-            style: TextStyle(
-              color: isDark ? Colors.white54 : const Color(0xFF808080),
-              fontSize: 14,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: isDark ? Colors.white54 : const Color(0xFF91919F),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                hint: Text(
+                  hint,
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : const Color(0xFF808080),
+                    fontSize: 14,
+                  ),
+                ),
+                isExpanded: true,
+                icon: Icon(Icons.expand_more,
+                    color:
+                        isDark ? Colors.white54 : context.mutedText,
+                    size: 20),
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child: Text(hint,
+                        style: TextStyle(
+                            color: isDark
+                                ? Colors.white54
+                                : context.mutedText)),
+                  ),
+                  ...items.map((item) => DropdownMenuItem(
+                        value: item,
+                        child: Text('$displayPrefix$item'),
+                      )),
+                ],
+                onChanged: onChanged,
+              ),
             ),
           ),
-          isExpanded: true,
-          icon: Icon(Icons.expand_more,
-              color: isDark ? Colors.white54 : Colors.grey[600], size: 20),
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child: Text(hint,
-                  style: TextStyle(
-                      color: isDark ? Colors.white54 : Colors.grey[600])),
-            ),
-            ...items.map((item) => DropdownMenuItem(
-                  value: item,
-                  child: Text('$displayPrefix$item'),
-                )),
-          ],
-          onChanged: onChanged,
-        ),
+        ],
       ),
     );
   }
@@ -285,7 +305,7 @@ class _SubjectTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${subject.branch} · Sem ${subject.sem}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 12, color: context.faintText),
                   ),
                 ],
               ),

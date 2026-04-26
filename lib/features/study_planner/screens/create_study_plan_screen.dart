@@ -111,7 +111,7 @@ class _CreateStudyPlanScreenState
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: _examDate == null
-                                  ? Colors.grey[500]
+                                  ? context.faintText
                                   : (isDark
                                       ? Colors.white
                                       : const Color(0xFF161719)),
@@ -270,7 +270,7 @@ class _CreateStudyPlanScreenState
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text,
-        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+        style: GoogleFonts.poppins(fontSize: 12, color: context.mutedText),
       ),
     );
   }

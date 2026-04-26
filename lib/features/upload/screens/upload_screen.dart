@@ -260,7 +260,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Uploading... ${(uploadState.progress * 100).toInt()}%',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      style: TextStyle(color: context.mutedText, fontSize: 13),
                     ),
                   ],
                 ),
