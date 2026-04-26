@@ -57,7 +57,7 @@ class AgentAIService implements AIService {
             'sem': sem,
             'subject': subject,
             'pyq_resource_ids': pyqResourceIds,
-            'force_refresh': false,
+            'force_refresh': true,
           }),
         )
         .timeout(const Duration(seconds: 200));
@@ -104,7 +104,7 @@ class AgentAIService implements AIService {
             'sem': sem,
             'subject': subject,
             'pyq_resource_ids': pyqResourceIds,
-            'force_refresh': false,
+            'force_refresh': true,
           }),
         )
         .timeout(const Duration(seconds: 200));
@@ -239,7 +239,7 @@ class AgentAIService implements AIService {
             'exam_date': examDate.toIso8601String(),
             'daily_study_minutes': dailyStudyMinutes,
             'weak_topics': weakTopics,
-            'force_refresh': false,
+            'force_refresh': true,
           }),
         )
         .timeout(const Duration(seconds: 300));
@@ -310,7 +310,7 @@ class AgentAIService implements AIService {
             'subject': subject,
             'focus_topics': focusTopics,
             'question_count': questionCount,
-            'force_refresh': false,
+            'force_refresh': true,
           }),
         )
         .timeout(const Duration(seconds: 300));
@@ -357,7 +357,7 @@ class AgentAIService implements AIService {
             'subject': subject,
             'focus_topics': focusTopics,
             'question_count': questionCount,
-            'force_refresh': false,
+            'force_refresh': true,
           }),
         )
         .timeout(const Duration(seconds: 300));
