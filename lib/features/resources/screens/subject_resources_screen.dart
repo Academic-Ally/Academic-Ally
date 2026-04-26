@@ -114,11 +114,10 @@ class SubjectResourcesScreen extends ConsumerWidget {
                     ),
                   ),
                   data: (flags) => Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 8),
                         Text(
                           'Resource Categories',
                           style: TextStyle(
@@ -129,16 +128,22 @@ class SubjectResourcesScreen extends ConsumerWidget {
                                 : const Color(0xFF161719),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Pick a category to browse resources.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.mutedText,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
                         Expanded(
-                          child: GridView.count(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 14,
-                            childAspectRatio: 1.3,
+                          child: ListView(
+                            padding: EdgeInsets.zero,
                             children: [
-                              _ResourceTypeCard(
+                              _ResourceTypeTile(
                                 title: 'Notes',
+                                subtitle: 'Topic-wise study notes',
                                 icon: Icons.description_outlined,
                                 color: const Color(0xFF6360FF),
                                 hasResources:
@@ -146,8 +151,10 @@ class SubjectResourcesScreen extends ConsumerWidget {
                                 onTap: () => _navigateToList(
                                     context, AppConstants.notes),
                               ),
-                              _ResourceTypeCard(
+                              const SizedBox(height: 12),
+                              _ResourceTypeTile(
                                 title: 'Question Papers',
+                                subtitle: 'Previous year question papers',
                                 icon: Icons.quiz_outlined,
                                 color: const Color(0xFFFF8181),
                                 hasResources:
@@ -156,8 +163,10 @@ class SubjectResourcesScreen extends ConsumerWidget {
                                 onTap: () => _navigateToList(
                                     context, AppConstants.questionPapers),
                               ),
-                              _ResourceTypeCard(
+                              const SizedBox(height: 12),
+                              _ResourceTypeTile(
                                 title: 'Other Resources',
+                                subtitle: 'Question banks & extras',
                                 icon: Icons.folder_outlined,
                                 color: const Color(0xFF4CAF50),
                                 hasResources:
@@ -166,8 +175,10 @@ class SubjectResourcesScreen extends ConsumerWidget {
                                 onTap: () => _navigateToList(
                                     context, AppConstants.otherResources),
                               ),
-                              _ResourceTypeCard(
+                              const SizedBox(height: 12),
+                              _ResourceTypeTile(
                                 title: 'Syllabus',
+                                subtitle: 'Official course syllabus',
                                 icon: Icons.menu_book_outlined,
                                 color: const Color(0xFFFF9800),
                                 hasResources:
@@ -203,15 +214,17 @@ class SubjectResourcesScreen extends ConsumerWidget {
   }
 }
 
-class _ResourceTypeCard extends StatelessWidget {
+class _ResourceTypeTile extends StatelessWidget {
   final String title;
+  final String subtitle;
   final IconData icon;
   final Color color;
   final bool hasResources;
   final VoidCallback onTap;
 
-  const _ResourceTypeCard({
+  const _ResourceTypeTile({
     required this.title,
+    required this.subtitle,
     required this.icon,
     required this.color,
     required this.hasResources,
@@ -221,62 +234,98 @@ class _ResourceTypeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1F1F26) : Colors.white;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[850] : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
                 ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              Row(
-                children: [
-                  Expanded(
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF161719),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                if (hasResources)
+                  Icon(
+                    Icons.chevron_right,
+                    color: context.faintText,
+                    size: 22,
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: context.faintText.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
-                      title,
+                      'Empty',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? Colors.white
-                            : const Color(0xFF161719),
+                        color: context.mutedText,
                       ),
                     ),
                   ),
-                  if (hasResources)
-                    Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-                  if (!hasResources)
-                    Text(
-                      'Empty',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

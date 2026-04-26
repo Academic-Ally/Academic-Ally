@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,12 +42,46 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     }).toList();
   }
 
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+        withData: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final picked = result.files.single;
+      if (picked.path == null) return;
+      setState(() => _selectedFilePath = picked.path);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open file picker: $e'),
+          backgroundColor: const Color(0xFFFF0101),
+        ),
+      );
+    }
+  }
+
   Future<void> _handleUpload() async {
-    if (_nameController.text.trim().isEmpty || _selectedSubject == null ||
-        _selectedBranch == null || _selectedSem == null) {
+    if (_nameController.text.trim().isEmpty ||
+        _selectedSubject == null ||
+        _selectedBranch == null ||
+        _selectedSem == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill all required fields'),
+          backgroundColor: Color(0xFFFF0101),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedFilePath == null || _selectedFilePath!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a PDF file first.'),
           backgroundColor: Color(0xFFFF0101),
         ),
       );
@@ -66,14 +103,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           filePath: _selectedFilePath ?? '',
         );
 
-    if (mounted && success) {
+    if (!mounted) return;
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Upload submitted for review!'),
+          content: Text('PDF uploaded — your resource is now live.'),
           backgroundColor: Color(0xFF5CB85C),
         ),
       );
-      // Reset form
       _nameController.clear();
       setState(() {
         _selectedSubject = null;
@@ -101,19 +138,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
             // File selection area
             GestureDetector(
-              onTap: () {
-                // TODO: Open file picker when storage is connected
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'PDF file picker will be available once storage is connected.'),
-                    backgroundColor: Color(0xFF6360FF),
-                  ),
-                );
-              },
+              onTap: uploadState.isUploading ? null : _pickFile,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -121,16 +149,16 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                     color: _selectedFilePath != null
                         ? const Color(0xFF5CB85C)
                         : Colors.grey.withValues(alpha: 0.3),
-                    style: BorderStyle.solid,
+                    width: _selectedFilePath != null ? 1.5 : 1,
                   ),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       _selectedFilePath != null
-                          ? Icons.check_circle
+                          ? Icons.picture_as_pdf
                           : Icons.cloud_upload_outlined,
-                      size: 60,
+                      size: 56,
                       color: _selectedFilePath != null
                           ? const Color(0xFF5CB85C)
                           : Colors.grey[400],
@@ -138,14 +166,42 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _selectedFilePath != null
-                          ? 'File selected'
+                          ? _selectedFilePath!
+                              .split(RegExp(r'[\\/]'))
+                              .last
                           : 'Tap to select a PDF',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white : const Color(0xFF161719),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                     ),
+                    if (_selectedFilePath != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatFileSize(File(_selectedFilePath!).lengthSync()),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.faintText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: uploadState.isUploading
+                            ? null
+                            : () =>
+                                setState(() => _selectedFilePath = null),
+                        icon: const Icon(Icons.close, size: 16),
+                        label: const Text('Change file'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -391,5 +447,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       default:
         return type;
     }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 }

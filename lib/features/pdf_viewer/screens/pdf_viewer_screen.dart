@@ -235,10 +235,22 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }
 
   void _handleShare() {
-    final text = 'Check out "${widget.name}" on Academic Ally!\n'
-        'Subject: ${widget.subject}\n'
-        '${widget.branch} - Semester ${widget.sem}';
-    SharePlus.instance.share(ShareParams(text: text));
+    // Play Store URL is the universal fallback: opens the listing for
+    // anyone who doesn't have the app, and the "Open" button on the
+    // listing launches Academic Ally for installed users. A proper
+    // single-tap deep link (universal links) will land once we have a
+    // working domain — getacademically.co is currently expired.
+    const playStoreUrl =
+        'https://play.google.com/store/apps/details?id=com.academically&hl=en';
+
+    final text =
+        'Get high-quality notes for ${widget.subject} on Academically! 📚\n\n'
+        '"${widget.name}" — ${widget.branch}, Semester ${widget.sem}\n\n'
+        'Download Academically: $playStoreUrl';
+
+    SharePlus.instance.share(
+      ShareParams(text: text, subject: '${widget.name} · Academic Ally'),
+    );
   }
 
   void _handleRate() {
@@ -597,7 +609,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
             Text(
               hasStorage
                   ? 'Tap "Download" to view this PDF.'
-                  : 'PDF storage is not connected yet.\nThe PDF will be viewable once storage is configured.',
+                  : 'This resource doesn\'t have a downloadable file yet.\nIt may be a legacy entry pending re-upload.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: context.faintText,

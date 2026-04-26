@@ -27,6 +27,10 @@ Academic Ally/                            # Workspace root (container — NOT a 
 │   │   ├── app/features/snap_doubt/      # Gemini Vision pre-step + 4-agent solver crew with ID-based citations
 │   │   ├── app/features/chat_about_pdf/  # AllyBot rewrite — single Gemini call + RAG with resource_id_filter
 │   │   ├── scripts/upload_pdfs.py        # Idempotent local PDF tree → Firebase Storage + Firestore ingestion
+│   │   ├── scripts/storage_audit.py      # Live-bucket audit (prefix counts, sizes, orphans)
+│   │   ├── scripts/list_storage_pdfs.py  # List every blob under a Storage prefix
+│   │   ├── scripts/list_resources.py     # Dump Firestore Universities/.../{type}/{subject} docs
+│   │   ├── scripts/check_it_sem2*.py     # One-off IT/sem-2 cross-checks (kept for reuse)
 │   │   ├── pyproject.toml                # crewai 1.14.3 + fastapi + firebase-admin + tavily
 │   │   └── run.sh                        # ./run.sh launches uv-synced uvicorn on :8000
 │   ├── firebase.json                     # Firebase CLI config (multi-codebase)
@@ -44,7 +48,7 @@ Academic Ally/                            # Workspace root (container — NOT a 
 
 ---
 
-## 🟢 Current Git State (as of 2026-04-26)
+## 🟢 Current Git State (as of 2026-04-27)
 
 ```
 * flutter                          = ACTIVE branch — all current work pushed here, matches origin/flutter
@@ -94,10 +98,23 @@ f150e81  Jobs & Internships
           downloadURL, R2 dropped, iOS support, Adversarial Examiner as new feature)
 016a3d7  Merge PR #3 — agentic-rag-platform → flutter
 
---- Today (2026-04-26) ---
+--- 2026-04-26 ---
 9c89f61  chore: deps update + AI backend URL switched to 10.0.2.2 (Android emulator)
          + UI cleanup (hide Knowledge Map / Gen UI / Project Copilot from home,
          rename Explore → Coming Soon...) + AA DEMO presentation prep folder
+
+--- 2026-04-27 (today) ---
+cbb0b15  docs(claude.md): refresh to Phase 4c state, correct Storage path layout
+23cbca9  fix(ai): always run agents fresh — set force_refresh=true on all 5 endpoints
+51ccbf1  feat(ui): home redesign + comprehensive dark mode overhaul
+         (theme tokens + context.mutedText/faintText extensions + Quick Access
+         tile size bump + AI Tools/Coming Soon as horizontal pill tiles +
+         dark-mode-aware login/signup/forgot/onboarding + onboarding theme toggle)
+[next]   feat(upload+ux): real PDF upload + share + bookmarks message + tile redesign
+         (Upload now writes to Firebase Storage at Resources/{...} + 3 Firestore
+         indexes; Subject Resources tiles redesigned as vertical pills; Share
+         uses Play Store deep link; "PDF storage not connected" message replaced
+         with the real reason; backend/scripts/ audit utilities)
 ```
 
 **Status:** All 28 features ship in code. **5 AI backends live on local FastAPI:** PYQ Analyzer (5 agents), Study Planner (4 agents), Adversarial Examiner (4 agents, generator-critic), Snap a Doubt (Gemini Vision + 4 agents), AllyBot (single LLM call + RAG with resource_id_filter). 3 AI features still on mocks but **hidden from the home screen UI**: Knowledge Map, Gen UI, Project Copilot. Phase 3 community features (Jobs, Channels, Marketplace) shown as "Coming Soon" — code wired, Firestore rules deployed.
@@ -117,7 +134,7 @@ f150e81  Jobs & Internships
 8. Bookmarks
 9. Recents
 10. Downloads
-11. Upload (community contribution queue)
+11. **Upload — LIVE** (community PDF contribution: `file_picker` → Firebase Storage at `Resources/{uni}/{course}/{branch}/{sem}/{category}/{subject}/{uploadId}_{name}.pdf` → 3 parallel Firestore writes: `Universities/...` for visibility, `NewUploads/...` admin queue, `Users/{uid}/UserUploads/...` history)
 12. SeekHub (resource request board)
 13. **AllyBot — LIVE** (single Gemini call + RAG with `resource_id_filter`, scoped per PDF)
 14. Profile + update profile
@@ -203,8 +220,8 @@ cd academic_ally/backend
 ### PDF Storage — Firebase Storage (R2 abandoned)
 
 - **Bucket layout has TWO prefixes** (verified 2026-04-26 against the live bucket — total ~152 blobs / ~236 MB):
-  - `Resources/{uni}/{course}/{branch}/{sem}/{type}/{subject}/{filename}.pdf` — the **curriculum PDFs** (~132 files). `type` = `Notes` / `OtherResources` / `QuestionPapers` / `Syllabus`. Subject and sem are part of the path. This is the path Firestore docs reference via the `storageId` field.
-  - `Universities/{uni}/{course}/{branch}/{randomId}` — only ~20 blobs, no extension, no sem/subject in path. Likely outputs of the in-app Upload feature (community contributions).
+  - `Resources/{uni}/{course}/{branch}/{sem}/{type}/{subject}/{filename}.pdf` — the **curriculum PDFs** (~132 files) AND **all new community uploads** (since 2026-04-27 the in-app Upload feature writes here too, with a `{uploadId}_` prefix on the filename to avoid collisions). `type` = `Notes` / `OtherResources` / `QuestionPapers` / `Syllabus`. Subject and sem are part of the path. This is the path Firestore docs reference via the `storageId` field.
+  - `Universities/{uni}/{course}/{branch}/{randomId}` — ~20 legacy blobs from the React Native era's Upload feature, no extension, no sem/subject in path. Inert; left in bucket but no new writes go here.
 - The Firestore tree is rooted at `Universities/`; the Storage tree for curriculum PDFs is rooted at `Resources/`. **Don't conflate them** — they share top-level naming with the Firestore tree but the prefixes are different.
 - The `storageId` field on a Firestore resource doc is the **complete bucket-relative path** (e.g. `Resources/OU/BE/IT/2/Notes/English/Unit II Notes.pdf`). The Flutter app does `FirebaseStorage.instance.ref(storageId).getDownloadURL()` — see `pdf_viewer_screen.dart:138`. Treat it as a full path; never split-and-basename it.
 - App streams the resolved download URL into `flutter_pdfview`.
@@ -344,6 +361,10 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 27. **Gemini free-tier 200 requests/day per model per project.** One PYQ run = ~15–25 Gemini calls → can hit the cap in 8–15 test runs. With 4 RAG-heavy multi-agent features running, easier to hit. Mitigations: wait for midnight Pacific reset, switch `LLM_MODEL` env var to a different Gemini model (separate buckets), or enable paid billing (~₹1–2 per run).
 
 28. **DropdownButton `items == null || items.isEmpty || value == null || items.where(item.value == value).length == 1` assertion** is a Flutter classic — fires when a dropdown's current value is not present in the items list (zero matches) OR appears more than once (duplicates). Subject lists from Firestore can have dupes (legacy data); guard with `Set` / `toSet().toList()` before passing to `DropdownButton`.
+
+29. **All AI features always run agents fresh.** `AgentAIService` sends `force_refresh: true` on every call to all 5 backend endpoints (PYQ, Study Planner, Adversarial Examiner, Snap a Doubt, AllyBot) — the backend's 24h cache is intentionally bypassed from the client. If you ever need cached behavior back, that's the single line per call to flip in `lib/core/services/ai/agent_ai_service.dart`. Each PYQ run still costs ~₹2 — keep the Gemini quota in mind during demos.
+
+30. **Dark-mode text colors must use `context.mutedText` / `context.faintText`**, not raw `Colors.grey[XXX]`. These are `BuildContext` extensions defined in `lib/config/theme.dart` that resolve to lighter shades in dark mode (`darkOnSurfaceMuted` / `darkOnSurfaceFaint`) and darker shades in light mode. The bulk of the codebase has been swapped; if you add a new screen with `Colors.grey[600]` for body text, run a grep before merging — the pattern is `mutedText` for secondary text, `faintText` for hints/disabled state. Helper methods that use these need `BuildContext context` in their signature.
 
 ### functions_py/ legacy gotchas (only relevant if redeploying)
 
