@@ -61,7 +61,7 @@ class AppConstants {
   // 'http://localhost:8000'. For a physical device on the same Wi-Fi, use
   // the host's LAN IP (and bind uvicorn with --host 0.0.0.0).
   static const String aiBackendBaseUrl =
-      'http://10.0.2.2:8000';
+      'https://academic-ally-production.up.railway.app';
 
   // Chat limits
   static const int maxChatInitiations = 50;
