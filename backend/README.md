@@ -113,3 +113,68 @@ When firebase-admin is initialized (i.e., `GOOGLE_APPLICATION_CREDENTIALS` point
 This is required for the Flutter UI to update when running against the local backend. The trade-off is that dev runs land in your prod Firestore. Acceptable for the close-circle demo phase; swap to the Firebase emulator if you want isolation later.
 
 If firebase-admin isn't initialized, both modules silently fall back to a process-local dict — curl tests get sane responses but the Flutter UI won't update.
+
+## Deploying to Railway
+
+The backend is set up for one-click Railway deployment.
+
+### Files involved
+
+- [`Procfile`](Procfile) and [`railway.toml`](railway.toml) — start command + health check
+- [`nixpacks.toml`](nixpacks.toml) — pins Python 3.12 + installs via `uv sync --frozen --no-dev`
+- [`app/firebase_init.py`](app/firebase_init.py) — accepts service-account credentials as an env var (no file needed)
+
+### One-time setup
+
+1. **Push `agentic-rag-platform` (or whichever branch) to GitHub.** Railway watches the branch.
+2. **In Railway, create a new project from the repo, root dir `backend/`.**
+3. **Set these environment variables on the Railway service:**
+
+   | Name | Value |
+   |---|---|
+   | `GEMINI_API_KEY` | Google AI Studio key |
+   | `TAVILY_API_KEY` | Tavily search key |
+   | `BACKEND_ADMIN_KEY` | Long random string for the admin auth bypass |
+   | `BACKEND_STORAGE_BUCKET` | `academic-ally-app.appspot.com` |
+   | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full content of `service-account.json` (see below) |
+   | `LLM_MODEL` (optional) | Defaults to `gemini/gemini-2.5-flash-lite` |
+   | `LOG_LEVEL` (optional) | Defaults to `INFO` |
+
+4. **Deploy.** Railway will run `uv sync --frozen --no-dev` then `uv run uvicorn …`.
+5. **Point Flutter at the Railway URL** by passing `--dart-define AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app` at build time, or by editing the constant in `lib/core/constants/app_constants.dart`.
+
+### Setting `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+Two equivalent formats — either works:
+
+**Raw JSON (paste the full contents):**
+
+```
+{"type":"service_account","project_id":"academic-ally-app","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"firebase-adminsdk-...@academic-ally-app.iam.gserviceaccount.com","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"...","universe_domain":"googleapis.com"}
+```
+
+Railway accepts multi-line values, but the JSON form above also works on a single line.
+
+**Base64 (safer if Railway's UI mangles special chars):**
+
+```bash
+base64 -i service-account.json | pbcopy   # macOS
+# or
+base64 -w0 service-account.json            # Linux
+```
+
+Paste the resulting string. The backend auto-detects raw vs base64 in [`firebase_init.py`](app/firebase_init.py).
+
+### Verifying the deploy
+
+Hit the public URL:
+
+```bash
+curl https://<your-service>.up.railway.app/health
+```
+
+Expect `firebase_credential_source: "service_account_env"` and `firebase_initialized: true`. If either is missing, check the env var is set and not empty in Railway's dashboard.
+
+### Cost watch
+
+Railway sleeps idle services on the free tier, so first request after idle can spike to 30 seconds while the container wakes. That's separate from the cold-start of CrewAI imports (~5–10 seconds). Together, the very first uncached PYQ run after a long idle gap can take ~150 seconds.

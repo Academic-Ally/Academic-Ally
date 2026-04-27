@@ -29,7 +29,6 @@ Without --subjects, every subject folder under {root} is uploaded.
 """
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -37,20 +36,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.settings import settings  # noqa: E402
+from app.firebase_init import init_firebase_admin  # noqa: E402
 
-# Push GOOGLE_APPLICATION_CREDENTIALS from .env into os.environ before
-# firebase_admin imports it (same trick as app/main.py).
-if settings.google_application_credentials and not os.environ.get(
-    "GOOGLE_APPLICATION_CREDENTIALS"
-):
-    cred_path = settings.google_application_credentials
-    if not os.path.isabs(cred_path):
-        cred_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", cred_path)
-        )
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = cred_path
-
-import firebase_admin  # noqa: E402
 from firebase_admin import firestore, storage  # noqa: E402
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP  # noqa: E402
 
@@ -67,10 +54,7 @@ IGNORE_NAMES = {"desktop.ini", ".DS_Store", "Thumbs.db"}
 
 
 def _init_firebase() -> None:
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(
-            options={"storageBucket": settings.backend_storage_bucket}
-        )
+    init_firebase_admin(storage_bucket=settings.backend_storage_bucket)
 
 
 def _walk_pdfs(

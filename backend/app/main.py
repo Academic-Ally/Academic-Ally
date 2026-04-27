@@ -21,26 +21,11 @@ os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
 
 from .settings import settings  # noqa: E402
 
-# pydantic-settings reads GOOGLE_APPLICATION_CREDENTIALS from .env into the
-# Settings object, but firebase_admin reads it from os.environ. Push the
-# .env value into the process env BEFORE firebase_admin imports / inits, so
-# the auto-detection of credentials picks the right service-account file.
-# Skip if the shell has already exported a value (shell wins).
-if settings.google_application_credentials and not os.environ.get(
-    "GOOGLE_APPLICATION_CREDENTIALS"
-):
-    cred_path = settings.google_application_credentials
-    if not os.path.isabs(cred_path):
-        # Resolve relative to the backend/ root (where .env lives), not cwd.
-        cred_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", cred_path)
-        )
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = cred_path
-
 import firebase_admin  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
+from .firebase_init import init_firebase_admin  # noqa: E402
 from .features.adversarial_examiner.routes import router as adversarial_router  # noqa: E402
 from .features.chat_about_pdf.routes import router as chat_router  # noqa: E402
 from .features.pyq_analyzer.routes import router as pyq_router  # noqa: E402
@@ -55,22 +40,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# Initialize Firebase Admin SDK once at import time. Picks up
-# GOOGLE_APPLICATION_CREDENTIALS from the environment.
-if not firebase_admin._apps:
-    try:
-        firebase_admin.initialize_app(
-            options={"storageBucket": settings.backend_storage_bucket}
-        )
-        logger.info(
-            "firebase_admin initialized (bucket=%s)",
-            settings.backend_storage_bucket,
-        )
-    except Exception as exc:
-        # We don't want to fail startup if creds are missing — Bearer
-        # token verification will fail with a clear message at request
-        # time. The Admin bypass scheme still works without creds.
-        logger.warning("firebase_admin init failed: %s", exc)
+# Initialise Firebase Admin SDK once at import time. The resolver
+# accepts either FIREBASE_SERVICE_ACCOUNT_JSON (env-var-friendly for
+# Railway / Render / Fly / Cloud Run) or GOOGLE_APPLICATION_CREDENTIALS
+# (file path, local-dev friendly).
+try:
+    init_firebase_admin(storage_bucket=settings.backend_storage_bucket)
+    logger.info(
+        "firebase_admin initialized (bucket=%s)",
+        settings.backend_storage_bucket,
+    )
+except Exception as exc:
+    # Don't fail startup — Bearer token verification will produce a
+    # clear error at request time. The Admin bypass scheme still works
+    # without credentials configured.
+    logger.warning("firebase_admin init failed: %s", exc)
 
 
 app = FastAPI(
@@ -95,24 +79,34 @@ app.include_router(chat_router)
 
 @app.get("/health")
 def health() -> dict:
+    cred_source: str | None = None
+    if settings.firebase_service_account_json:
+        cred_source = "service_account_env"
+    elif settings.google_application_credentials:
+        cred_source = "credentials_file"
     return {
         "ok": True,
         "model": settings.llm_model,
         "has_gemini": bool(settings.gemini_api_key),
         "has_tavily": bool(settings.tavily_api_key),
         "has_admin_key": bool(settings.backend_admin_key),
-        "has_firebase_creds": bool(settings.google_application_credentials),
+        "firebase_credential_source": cred_source,
         "firebase_initialized": bool(firebase_admin._apps),
     }
 
 
 @app.on_event("startup")
 def _log_config() -> None:
+    cred_source = (
+        "service_account_env"
+        if settings.firebase_service_account_json
+        else ("credentials_file" if settings.google_application_credentials else "none")
+    )
     logger.info(
-        "startup ok | model=%s gemini=%s tavily=%s admin_key=%s firebase_creds=%s",
+        "startup ok | model=%s gemini=%s tavily=%s admin_key=%s firebase=%s",
         settings.llm_model,
         bool(settings.gemini_api_key),
         bool(settings.tavily_api_key),
         bool(settings.backend_admin_key),
-        bool(settings.google_application_credentials),
+        cred_source,
     )

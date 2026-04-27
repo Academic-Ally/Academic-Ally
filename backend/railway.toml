@@ -1,0 +1,25 @@
+# Railway deployment config for the Academic Ally agentic backend.
+#
+# Builds with the official uv image (fastest cold-start for a uv-managed
+# Python project) and runs uvicorn directly. Health checks hit /health,
+# which is open (no auth) and returns config status.
+#
+# Required env vars on the Railway project:
+#   GEMINI_API_KEY                  — Google AI Studio key
+#   TAVILY_API_KEY                  — Tavily search key
+#   BACKEND_ADMIN_KEY               — long random string (auth bypass)
+#   FIREBASE_SERVICE_ACCOUNT_JSON   — full service-account.json content
+#                                     (raw JSON, or base64-encoded)
+#   BACKEND_STORAGE_BUCKET          — academic-ally-app.appspot.com
+# Optional:
+#   LLM_MODEL                       — default gemini/gemini-2.5-flash-lite
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
