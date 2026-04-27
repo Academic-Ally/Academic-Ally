@@ -145,6 +145,12 @@ class AgentAIService implements AIService {
     if (user == null) {
       throw StateError('Must be signed in to call the AI backend.');
     }
+    // getIdToken(false) returns the cached token if not expired. We
+    // intentionally do NOT pass forceRefresh:true — a freshly-minted token
+    // from Google's servers can have an `iat` slightly ahead of the local
+    // backend clock, and firebase-admin will reject it as
+    // "Token used too early". Stale-token-after-logout is handled at the
+    // Riverpod layer via authInvalidatorProvider, not here.
     final token = await user.getIdToken(false);
     if (token == null) {
       throw StateError('Could not obtain ID token.');

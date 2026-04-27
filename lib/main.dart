@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/theme.dart';
+import 'core/providers/auth_invalidator.dart';
 import 'core/providers/deep_link_provider.dart';
 import 'core/providers/fcm_provider.dart';
 import 'core/providers/theme_provider.dart';
@@ -47,6 +48,11 @@ class AcademicAllyApp extends ConsumerWidget {
 
     // Activate FCM sync lifecycle (token, topic subscriptions, tap bridge).
     ref.watch(fcmSyncProvider);
+
+    // Reset user-scoped Riverpod state on logout/login. Without this, the
+    // previous user's stale subject/run state leaks into the new session
+    // and AI tools refuse to fire until a hot-restart.
+    ref.watch(authInvalidatorProvider);
 
     // Show an in-app SnackBar when a push arrives while the app is in the
     // foreground. System notifications only appear when the app is in the
