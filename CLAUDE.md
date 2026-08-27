@@ -2,7 +2,7 @@
 
 ## What Is This?
 
-Academic Ally is a resources platform (notes, question papers, question banks, syllabi) for B.E/B.Tech engineering students at **Osmania University (OU)** and **JNTUH** in Hyderabad, Telangana. The app was published on Google Play Store, went dormant, and has been **fully migrated from React Native to Flutter** — and **expanded into an AI-native education platform** with 5 multi-agent AI features (4 multi-agent crews + AllyBot RAG chat) for a major project submission (two cofounders).
+Academic Ally is a resources platform (notes, question papers, question banks, syllabi) for B.E/B.Tech engineering students at **Osmania University (OU)** and **JNTUH** in Hyderabad, Telangana. The app is **published and LIVE on the Google Play Store as `com.academically` v1.0.0 — the Flutter build**, and has been **fully migrated from React Native to Flutter** — and **expanded into an AI-native education platform** with 5 multi-agent AI features (4 multi-agent crews + AllyBot RAG chat) for a major project submission (two cofounders).
 
 ---
 
@@ -19,6 +19,17 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
 Firestore trees (OU + JNTUH) healthy. Because 31 GB > Spark's 5 GB free tier,
 **Blaze is mandatory** — there is no free-tier path back.
+
+### ⚠️ THIS IS A LIVE PRODUCTION OUTAGE, NOT JUST A DEMO PROBLEM
+
+**The Flutter build is what ships on the Play Store** (`com.academically`, v1.0.0
+— confirmed by the repo owner 2026-08-27; the React Native app was replaced).
+So this codebase is the live app, and the two failures above are hitting **real
+users right now**: nobody can open a PDF, and every AI feature errors out. This
+has been the case since billing lapsed around July 2026.
+
+Treat `master` as production code. Restoring billing is urgent for users, not
+only for the major-project demo.
 
 Revival order: (1) re-link billing → Blaze, (2) redeploy backend + repoint
 `aiBackendBaseUrl`, (3) commit the dirty tree / codebase cleanup, (4) re-verify
