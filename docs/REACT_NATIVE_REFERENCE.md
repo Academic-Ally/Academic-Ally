@@ -1,5 +1,10 @@
 # React Native Reference — `../Academic Ally Legacy/Academic-Ally-master/` (DORMANT)
 
+> **Note:** the source for the original React Native app is **not part of this repository.** It lives
+> only on the owner's machine (under `Academic Ally Legacy/`). If you cloned this
+> repo, this document is your reference — there is no code to open alongside it.
+
+
 The **original** React Native app, published on Google Play Store. **Dormant** — kept in the workspace solely as UI/behavior reference for the Flutter migration. Do not modify unless explicitly asked.
 
 ## Tech Stack

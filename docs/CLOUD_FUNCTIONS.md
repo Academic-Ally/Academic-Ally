@@ -1,5 +1,10 @@
 # Cloud Functions — `../Academic Ally Legacy/academic-ally-cloud-functions-main/`
 
+> **Note:** the source for the old Netlify functions is **not part of this repository.** It lives
+> only on the owner's machine (under `Academic Ally Legacy/`). If you cloned this
+> repo, this document is your reference — there is no code to open alongside it.
+
+
 Netlify serverless functions providing Chat (AllyBot) + Notifications APIs to all clients.
 
 ## Tech Stack

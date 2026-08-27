@@ -79,7 +79,7 @@ Academic Ally/                            # Workspace root (container — NOT a 
 
 **CRITICAL:** Workspace root is a container, not a project root. The **only active project** is `academic_ally/`. Never place new project files at workspace root. Presentation/coursework material belongs in `Shoaib Choudry Major/` or `Akram's Archive/`, never in this repo.
 
-The workspace root carries its own `CLAUDE.md` + `AGENTS.md` (entry-point orientation for any agent that lands there first). This directory has an `AGENTS.md` too — it redirects Codex/other tools to this file. Keep all of them in sync.
+On the owner's machine the workspace root also carries its own `CLAUDE.md` + `AGENTS.md` for whoever lands there first; **those are local-only and are not in this repo**, so ignore them if you cloned it — this file is self-sufficient. The `AGENTS.md` sitting next to this file IS in the repo and redirects Codex/other tools here. Keep whichever ones you can see in sync.
 
 ---
 
@@ -258,20 +258,22 @@ trusted as of 2026-08-27.
 
 | Doc | Covers | Read it when | Accuracy |
 |---|---|---|---|
-| `AGENTS.md` (here + workspace root) | Hard rules for any AI agent | Always, if you are Codex or a non-Claude tool | ✅ Current |
+| `AGENTS.md` | Hard rules for any AI agent | Always, if you are Codex or a non-Claude tool | ✅ Current |
+| `README.md` | What Academic Ally is, for a human landing on the repo | Onboarding a person, or writing anything public-facing | ✅ Current |
 | `docs/AGENTIC_FEATURES.md` | The 5 AI features end-to-end: crews, agents, tasks, RAG pipeline, code paths | Any AI / backend / RAG work | ✅ Current — the most reliable deep-dive |
 | `docs/FIRESTORE_SCHEMA.md` | Every collection, field, rule status, index, plus the `RagChunks` vector store | Any Firestore read/write/rule change | ✅ Current |
 | `docs/ARCHITECTURE.md` | Flutter structure, 31 routes, state management, deep-link allow-list, assets, deps | Any UI / navigation / provider work | ✅ Refreshed 2026-08-27 |
 | `backend/README.md` | How to run the FastAPI backend + the Railway deploy procedure | Running or deploying the backend | ✅ Current |
 | `functions/README.md` | The `stopBilling` billing hard-cap function | Billing / cost-cap work | ✅ Current |
-| `docs/REACT_NATIVE_REFERENCE.md` · `docs/WEB_REFERENCE.md` · `docs/CLOUD_FUNCTIONS.md` | The three legacy codebases in `../Academic Ally Legacy/` | Checking how the original app behaved | ✅ Reference only |
+| `docs/REACT_NATIVE_REFERENCE.md` · `docs/WEB_REFERENCE.md` · `docs/CLOUD_FUNCTIONS.md` | The three pre-Flutter codebases. **The code itself is not in this repo** — these docs ARE the reference | Checking how the original app behaved | ✅ Reference only |
 | `docs/archive/` | Executed plans and abandoned approaches, indexed by `STALE.md` | Archaeology only | 🔴 **Deliberately out of date — do not act on it** |
 
-That is the complete active documentation set: **six live docs plus this file.**
-It is kept deliberately small. Before adding a new doc, ask whether the content
-belongs in an existing one — and when a doc's plan gets executed, move it to
-`docs/archive/` and add an entry to `STALE.md` rather than leaving it to rot.
-Presentation and coursework material never belongs in this repo at all.
+**That table is the complete active documentation set** — this file plus nine
+docs, three of which are small legacy references. It is kept deliberately small.
+Before adding a new doc, ask whether the content belongs in an existing one; when
+a doc's plan gets executed, move it to `docs/archive/` and add an entry to
+`STALE.md` rather than leaving it to rot. Presentation and coursework material
+never belongs in this repo at all.
 
 **Protocol:**
 1. `CLAUDE.md` (this file) → the status banner + gotchas are non-negotiable context.

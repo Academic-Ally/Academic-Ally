@@ -1,5 +1,10 @@
 # Web App Reference — `../Academic Ally Legacy/academic-ally-web-main/` (DORMANT, but the site is still live)
 
+> **Note:** the source for the React web app is **not part of this repository.** It lives
+> only on the owner's machine (under `Academic Ally Legacy/`). If you cloned this
+> repo, this document is your reference — there is no code to open alongside it.
+
+
 React web version of Academic Ally. **Dormant** reference. Do not modify unless explicitly asked.
 
 ## Tech Stack
