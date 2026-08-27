@@ -55,15 +55,21 @@ Format: `{university}_{course}_{branch}_{sem}` — e.g., `JNTUH_BTECH_CSE_3`. Br
 {
   name, subject, category, rating, views, uploaderId, uploaderName,
   size, sem, branch, date, units,
-  storageId,   // R2 object key (Phase 4) or legacy Drive file ID
+  storageId,   // FULL Firebase Storage path (or a legacy Drive file ID on old docs)
   did          // legacy alias
 }
 ```
 
-**Storage convention (Phase 4):** `storageId` will hold an R2 object key matching:
-`Universities/{university}/{course}/{branch}/{sem}/{subject}/{category}/{filename}.pdf`
+**Storage convention (LIVE):** `storageId` holds the **complete bucket-relative path** in Firebase Storage:
+`Resources/{university}/{course}/{branch}/{sem}/{resourceType}/{subject}/{filename}.pdf`
 
-The app's PDF viewer reads `storageId`, prefixes `R2StorageService.publicBaseUrl`, fetches via `flutter_pdfview`.
+Note the root is `Resources/`, **not** `Universities/` — the Firestore tree and the Storage tree
+are rooted differently; don't conflate them.
+
+The PDF viewer passes `storageId` straight to `FirebaseStorage.instance.ref(storageId).getDownloadURL()`
+and streams the result into `flutter_pdfview`. Treat it as a whole path — never split it and use the
+basename. Legacy docs from the React Native era have **no** `storageId`; the resource provider filters
+those out so they never reach the UI.
 
 ### `QueryList/{university}/{course}/SubjectsListDetail`
 ```
@@ -359,10 +365,45 @@ Ephemeral per-run progress tracker for the PYQ Analyzer multi-agent crew. Flutte
 
 ---
 
+## Phase 4c — `RagChunks` vector store (LIVE)
+
+### `RagChunks/{subject_key}/chunks/{chunkId}`
+
+The retrieval corpus behind every AI feature. `subject_key` is
+`{university}_{course}_{branch}_{sem}_{subject}` — one sub-collection per subject,
+which keeps vector queries scoped and cheap.
+
+```js
+{
+  text: string,            // 2000-char chunk (200-char overlap) from pdf_chunker.py
+  embedding: Vector,       // 768-dim, gemini-embedding-001 (3072 truncated to 768)
+  page: number,            // source page — powers clickable PDF citations
+  pdfName: string,
+  resourceId: string,      // ties the chunk back to its Universities/... doc
+  subject: string,
+  university: string,
+  branch: string,
+  sem: string,
+}
+```
+
+**Written by:** `backend/scripts/upload_pdfs.py` at ingestion (embeddings use
+`RETRIEVAL_DOCUMENT` task type).
+
+**Read by:** `RagSearchTool` in every crew, via Firestore Vector Search
+(`find_nearest`, COSINE) with `RETRIEVAL_QUERY` embeddings. AllyBot additionally
+filters by `resource_id_filter` so chat stays scoped to the open PDF.
+
+**⚠️ Requires a per-`subject_key` vector index.** Queries fail until the index
+exists — created manually via Console/`gcloud` today. Automating this is an open
+to-do; a subject with no index is the most common cause of "AI returns nothing".
+
+---
+
 ## Cost Implications (ballpark)
 
 - **Firestore operations:** Blaze ~$0.06 per 100K reads. Communities chat is the biggest risk (every message = 1 write + N client reads via stream). Mitigation: pagination + message limits already in place (200-message cap per channel).
-- **Firebase Storage (Marketplace photos):** Storage is cheap. Egress is the killer — that's why R2 is planned for public PDFs.
+- **Firebase Storage:** ~31 GB stored (6,481 PDFs) ≈ $0.80/month; egress ~$0.12/GB is the real variable. (R2 was evaluated as an egress escape hatch and ABANDONED — PDFs are served straight from Firebase Storage.)
 - **FCM messages:** free for transactional pushes. Topic subscription is free.
 - **AI costs (Phase 4b, PYQ only):** Gemini 2.5 Flash Lite ~$0.01–0.02 per analysis on paid tier. 200 requests/day free-tier quota = roughly 8–15 full PYQ runs/day before hitting the cap.
 - **Tavily web search:** free tier is 1000 searches/month; each PYQ run uses 2–5 searches. Comfortable headroom.

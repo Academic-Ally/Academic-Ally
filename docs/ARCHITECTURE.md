@@ -10,14 +10,15 @@ Deep dive into the Flutter project structure, tech stack, routes, assets, and cu
 | Navigation | GoRouter (declarative) | Auth guard, deep-link support, ShellRoute for bottom nav |
 | Design system | Material Design 3 | Branded: #6360FF primary, #FF8181 tertiary, #F1F1FA secondary |
 | Font | Poppins (via google_fonts) | Same as RN original |
-| PDF storage | **Cloudflare R2** (scaffolded, `publicBaseUrl` pending) | Zero egress (Firebase Storage scales badly for public PDFs) |
-| PDF viewing | `flutter_pdfview` (scaffolded — placeholder rendering until R2 is filled) | Native PDF rendering |
+| PDF storage | **Firebase Storage** (`getDownloadURL()` streamed into the viewer) | R2 was evaluated, abandoned 2026-04-26, and its dead code deleted 2026-08-27 |
+| PDF viewing | `flutter_pdfview` (live, supports `initialPage` for AI citations) | Native PDF rendering |
 | Image uploads | Firebase Storage (auth-gated, deployed 2026-04-20) | Used by Marketplace for listing photos |
 | Image picker | `image_picker` 1.1.2 | Camera + gallery for Marketplace, Snap-a-Doubt |
 | Deep linking | `app_links` 6.4.1 | Custom scheme + universal links |
-| AI service | `MockAIService` (Phase 2-3), `GeminiAIService` stub (Phase 4) | Single swap point via `aiServiceProvider` |
+| AI service | `AgentAIService` → FastAPI backend (live for 5 features); `MockAIService` still backs the 3 hidden ones | Single swap point via `aiServiceProvider` |
 | Backend | Firebase (Auth, Firestore, Storage, Messaging, Analytics) | Unchanged from RN |
-| Cloud functions | Firebase (billing cap) + Netlify (legacy AllyBot) | Mixed — Phase 4 audits this |
+| Cloud functions | Firebase `stopBilling` (billing cap) only | The Netlify AllyBot backend is retired; AllyBot now calls `/chat_about_pdf` on the Python backend |
+| AI backend | **FastAPI + CrewAI + Gemini** in `backend/` | See `docs/AGENTIC_FEATURES.md`; deployment currently DOWN (see CLAUDE.md status banner) |
 
 ## Firebase Configuration
 
@@ -45,15 +46,14 @@ academic_ally/
     │   └── theme.dart                    # M3 light/dark themes
     ├── core/
     │   ├── constants/
-    │   │   ├── app_constants.dart        # Universities, branches, sems, resource types, R2 config, cloud function URL
+    │   │   ├── app_constants.dart        # Universities, branches, sems, resource types, backend + cloud function URLs
     │   │   └── firestore_paths.dart      # Every Firestore path helper (27 collections)
     │   ├── providers/
     │   │   ├── theme_provider.dart       # Light/dark mode (persisted)
     │   │   ├── fcm_provider.dart         # FcmSyncNotifier + foregroundMessageProvider + FCM-tap → deep-link bridge
     │   │   ├── deep_link_provider.dart   # DeepLinkNotifier (cold-start + stream + pending-link queue)
-    │   │   └── ai_provider.dart          # aiServiceProvider — single swap point for Phase 4
+    │   │   └── ai_provider.dart          # aiServiceProvider — single swap point (Mock ↔ Agent backend)
     │   ├── services/
-    │   │   ├── r2_storage_service.dart   # Cloudflare R2 — publicBaseUrl PENDING
     │   │   ├── fcm_service.dart          # FCM token/topic/permission/cleanup — has 3-layer idempotency fix
     │   │   ├── deep_link_service.dart    # URL ↔ GoRouter route mapper with allow-list
     │   │   └── ai/
@@ -169,14 +169,17 @@ Defined in `DeepLinkService._allowedRoutes`. Covers all routes reachable from ou
 /jobs, /communities, /marketplace
 ```
 
-## Home screen composition (3 sections)
+## Home screen composition (redesigned 2026-04-27)
 
 1. **Quick Access** (icon row) — Recents, Downloads, AllyBot, etc.
-2. **AI Tools** (horizontal scroll, 6 cards, Phase 2)
-3. **Explore** (horizontal scroll, 3 cards, Phase 3)
+2. **AI Tools** — 4 horizontal pill tiles: Study Planner, PYQ Analyzer, Adversarial Examiner, Snap a Doubt
+3. **Coming Soon...** — 3 pill tiles: Jobs, Communities, Marketplace
 4. **Recommended** — subjects pulled from Firestore `QueryList`
 
-Each card uses the `_AiToolCard` widget in `home_screen.dart` regardless of section — single visual pattern.
+Knowledge Map, Gen UI and Project Copilot tiles were REMOVED from the home screen
+(their routes still exist in `app_router.dart`). Dark mode support was overhauled
+in the same pass — use `context.mutedText` / `context.faintText`, never raw
+`Colors.grey[XXX]`.
 
 ## Assets
 
@@ -217,54 +220,18 @@ flutter_launcher_icons: ^0.14.3
 flutter_native_splash: ^2.4.6
 ```
 
-## Build Status (as of 2026-04-20)
+## Build Status
 
-All 24 features complete and working:
+**Do not maintain a feature list here** — it drifts. The authoritative, current
+inventory of all 28 features (and which AI features are live vs hidden vs mocked)
+lives in the **Feature Inventory** section of `academic_ally/CLAUDE.md`.
 
-**Pre-existing migration:**
-- [x] Firebase integration (Auth, Firestore, Storage, Messaging, Analytics)
-- [x] Auth flow (Login / Signup / Forgot Password / Email verification)
-- [x] Bottom navigation (Home, Search, Upload, Bookmarks, Profile)
-- [x] Material Design 3 + dark mode
-- [x] R2 storage service (scaffolded, `publicBaseUrl` pending Phase 4)
-- [x] Subject/Resources browser (university → branch → sem → subject → 4 resource types)
-- [x] PDF viewer (placeholder rendering until R2 fills)
-- [x] Search with Firestore queries + filters
-- [x] Bookmarks, Recents, Downloads
-- [x] Upload flow → NewUploads queue
-- [x] AllyBot (chat UI, legacy ChatPDF backend — Phase 4 swap to Gemini)
-- [x] SeekHub (request board + subscribe toggle)
-- [x] Profile + update profile
-- [x] Splash + onboarding (4 slides + Skip)
+Known outstanding work is tracked in CLAUDE.md's "What's Still Left" section.
 
-**Phase 1 — Infrastructure:**
-- [x] Onboarding with Skip button
-- [x] Report abuse bottom sheet
-- [x] Deep linking (app_links, custom scheme + universal links, FCM-tap bridge, pending-link queue)
-- [x] FCM push notifications with 3-layer idempotency fix
+## AllyBot current state
 
-**Phase 2 — AI Features (on mocks):**
-- [x] AI service abstraction (`AIService`, `MockAIService`, `GeminiAIService` stub, `aiServiceProvider`, `ai_models.dart`)
-- [x] Misconception Graph (Knowledge Map + practice sheet, persists mastery/misconceptions)
-- [x] Study Planner (list + create + detail with task toggles)
-- [x] Gen UI (prompt + renderer with 6 primitives)
-- [x] PYQ Analyzer (subject picker + cached analysis — see Gotcha #3 in CLAUDE.md re: silent write failure)
-- [x] Snap-a-Doubt (camera/gallery + mock solver + history)
-- [x] Project Copilot (list + create + 4-tab detail with cached guidance)
-
-**Phase 3 — Community Features:**
-- [x] Jobs & Internships (list + detail + post, external apply, seeder)
-- [x] Communities & Channels (channels list + real-time chat + create, seeder)
-- [x] Marketplace (grid + detail + create with Firebase Storage uploads, seeder, WhatsApp contact)
-
-**Security:**
-- [x] Storage rules deployed (auth-gate, 2026-04-20)
-- [ ] Firestore rules still permissive — Phase 4
-- [ ] Strict path-scoped Storage rules — Phase 4
-
-## AllyBot Current State (unchanged since migration)
-
-- Chat UI, Firestore session storage, rate limiting, HTTP plumbing — all done
-- ⚠ `cloudFunctionsBaseUrl` in `app_constants.dart:55` is wrong (Netlify vs Firebase)
-- Backend is ChatPDF (PDF Q&A only) — insufficient for new AI features
-- Plan: Phase 4 swap to `aiServiceProvider.chatAboutPdf()` → Gemini
+Rewritten in commit `4f7ed09`. It is no longer the legacy Netlify ChatPDF
+integration: AllyBot now posts to `/chat_about_pdf` on the Python backend, which
+answers with a single Gemini call grounded in RAG chunks filtered by
+`resource_id_filter`, so the conversation stays scoped to the PDF the user has
+open. Chat UI, Firestore session storage and rate limiting are unchanged.

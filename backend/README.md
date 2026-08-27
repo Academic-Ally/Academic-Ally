@@ -1,6 +1,6 @@
 # Academic Ally — Local FastAPI Backend
 
-Local dev mirror of the PYQ Analyzer agent crew that ships as a Firebase Cloud Function in [`functions_py/`](../functions_py/). Same agent prompts, same response shape — but runs on `localhost:8000` so iteration doesn't need a deploy.
+**The** AI backend for Academic Ally — a FastAPI service hosting all five agentic features (PYQ Analyzer, Study Planner, Adversarial Examiner, Snap a Doubt, AllyBot) plus the shared RAG layer. This replaced the Cloud Functions approach in [`functions_py/`](../functions_py/), which is now LEGACY and no longer called by the app. Runs on `localhost:8000` for development and deploys to Railway for production (⚠️ the Railway service is currently down — see the root `CLAUDE.md` status banner).
 
 ## Setup
 

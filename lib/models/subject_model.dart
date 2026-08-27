@@ -12,7 +12,7 @@ class SubjectModel {
   /// Parses a subject entry from a QueryList `list` array item.
   ///
   /// Production data uses `subjectName` (not `subject`) — confirmed from the
-  /// web app at `academic-ally-web-main/src/pages/PdfViewer/multipleResType.js`.
+  /// web app at `Academic Ally Legacy/academic-ally-web-main/src/pages/PdfViewer/multipleResType.js`.
   /// Falls back to `subject` for any hand-authored docs. `sem` may be stored
   /// as either a string or a number in legacy data; `.toString()` normalizes
   /// both so downstream filtering against `UserModel.sem` (always string) works.

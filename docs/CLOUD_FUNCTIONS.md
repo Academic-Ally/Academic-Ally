@@ -1,4 +1,4 @@
-# Cloud Functions — `academic-ally-cloud-functions-main/`
+# Cloud Functions — `../Academic Ally Legacy/academic-ally-cloud-functions-main/`
 
 Netlify serverless functions providing Chat (AllyBot) + Notifications APIs to all clients.
 

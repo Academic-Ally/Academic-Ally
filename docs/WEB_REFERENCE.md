@@ -1,4 +1,4 @@
-# Web App Reference — `academic-ally-web-main/` (DORMANT)
+# Web App Reference — `../Academic Ally Legacy/academic-ally-web-main/` (DORMANT, but the site is still live)
 
 React web version of Academic Ally. **Dormant** reference. Do not modify unless explicitly asked.
 

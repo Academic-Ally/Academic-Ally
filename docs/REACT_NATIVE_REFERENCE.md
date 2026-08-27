@@ -1,4 +1,4 @@
-# React Native Reference — `Academic-Ally-master/` (DORMANT)
+# React Native Reference — `../Academic Ally Legacy/Academic-Ally-master/` (DORMANT)
 
 The **original** React Native app, published on Google Play Store. **Dormant** — kept in the workspace solely as UI/behavior reference for the Flutter migration. Do not modify unless explicitly asked.
 

@@ -6,6 +6,26 @@ Academic Ally is a resources platform (notes, question papers, question banks, s
 
 ---
 
+## 🚨 Current Status (2026-08-27) — REVIVAL IN PROGRESS
+
+The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
+**two pieces of infrastructure died** and both block the major-project demo:
+
+| What | State | Effect |
+|---|---|---|
+| Google Cloud billing account | **CLOSED** (trial credits expired ~Jul 2026) | Firebase Storage client API returns **HTTP 402** → no PDF opens in the app. Firestore + Auth still work, so lists render but documents fail. |
+| Railway backend | **DEAD** — 404 "Application not found" | All 5 AI features fail; app still points at the dead URL. |
+
+Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
+Firestore trees (OU + JNTUH) healthy. Because 31 GB > Spark's 5 GB free tier,
+**Blaze is mandatory** — there is no free-tier path back.
+
+Revival order: (1) re-link billing → Blaze, (2) redeploy backend + repoint
+`aiBackendBaseUrl`, (3) commit the dirty tree / codebase cleanup, (4) re-verify
+the `stopBilling` cap, (5) app bugs + UI work.
+
+---
+
 ## Repository Structure
 
 ```
@@ -16,7 +36,6 @@ Academic Ally/                            # Workspace root (container — NOT a 
 │   ├── lib/                              # Dart source
 │   ├── assets/                           # Images, lottie
 │   ├── docs/                             # Context docs (ARCHITECTURE, FIRESTORE_SCHEMA, etc.)
-│   ├── AA DEMO/                          # Major-project presentation prep (5 member scripts + PPTPROMPT)
 │   ├── backend/                          # 🟢 ACTIVE — FastAPI local Python service (uv-managed)
 │   │   ├── app/main.py                   # FastAPI entry — /health + 5 feature routers
 │   │   ├── app/shared/llm.py             # CrewAI LLM wrapper (Gemini via litellm)
@@ -39,23 +58,39 @@ Academic Ally/                            # Workspace root (container — NOT a 
 │   ├── functions/                        # Firebase Cloud Functions — Node.js (billing cap only)
 │   ├── functions_py/                     # ⚠️ LEGACY — Python Cloud Function (only PYQ deployed; Flutter no longer points here)
 │   └── pubspec.yaml
-├── Academic-Ally-master/                 # React Native app (DORMANT — reference only)
-├── academic-ally-web-main/               # React web app (DORMANT — reference, live at academic-ally.netlify.app)
-└── academic-ally-cloud-functions-main/   # Old Netlify functions (DORMANT — AllyBot legacy, replaced by backend/chat_about_pdf)
+├── Academic Ally Legacy/                 # 🟡 PRE-FLUTTER ERA — reference only, do not edit
+│   ├── Academic-Ally-master/             # Original React Native app (shipped to Play Store pre-migration)
+│   ├── academic-ally-web-main/           # React web app — still LIVE at academic-ally.netlify.app
+│   └── academic-ally-cloud-functions-main/  # Old Netlify functions (AllyBot legacy, replaced by backend/chat_about_pdf)
+├── Shoaib Choudry Major/                 # 🔵 NON-TECHNICAL — Shoaib's major-project presentation work
+└── Akram's Archive/                      # 🔵 NON-TECHNICAL — Akram's team presentation material (archived favour)
 ```
 
-**CRITICAL:** Workspace root is a container holding 4 sibling folders. The **only active project** is `academic_ally/`. Never place new project files at workspace root.
+**CRITICAL:** Workspace root is a container, not a project root. The **only active project** is `academic_ally/`. Never place new project files at workspace root. Presentation/coursework material belongs in `Shoaib Choudry Major/` or `Akram's Archive/`, never in this repo.
+
+The workspace root carries its own `CLAUDE.md` + `AGENTS.md` (entry-point orientation for any agent that lands there first). This directory has an `AGENTS.md` too — it redirects Codex/other tools to this file. Keep all of them in sync.
 
 ---
 
-## 🟢 Current Git State (as of 2026-04-27)
+## 🟢 Current Git State (as of 2026-08-27)
 
 ```
-* flutter                          = ACTIVE branch — all current work pushed here, matches origin/flutter
+* flutter                          = ACTIVE branch — matches origin/flutter exactly (0 ahead / 0 behind at a871481)
   master                           = local-only, behind flutter (do not push to GitHub master)
   session-2026-04-19-backup        = historical work backup (superseded)
-  remotes/origin/flutter           = user's designated push target (matches local exactly)
+  remotes/origin/flutter           = user's designated push target
   remotes/origin/master            = hands-off per user rule (never push here)
+  remotes/origin/dev-affan         = cofounder Affan's RN-era work (latest 2025-01) — pre-Flutter, ignore
+  remotes/origin/prod-fixes        = Affan's RN-era Play Store fixes (latest 2025-05-30) — pre-Flutter, ignore
+  remotes/origin/stable            = Affan's RN-era stable line (2025-04) — pre-Flutter, ignore
+  remotes/origin/agentic-rag-platform = merged PR #3 branch (superseded by flutter)
+
+WORKING TREE IS DIRTY (uncommitted, as of 2026-08-27):
+  - deletions: AA DEMO/** (moved out of the repo to ../Akram's Archive/ on 2026-08-23)
+  - modified:  pubspec.lock
+  - untracked: ~15 backend/scripts/*.py bulk-upload + audit utilities from the May 2026
+               JNTUH/OU ingestion marathon, plus devtools_options.yaml
+  These are pending the pre-push cleanup commit.
 ```
 
 ### Commit log (most recent last)
@@ -110,14 +145,61 @@ cbb0b15  docs(claude.md): refresh to Phase 4c state, correct Storage path layout
          (theme tokens + context.mutedText/faintText extensions + Quick Access
          tile size bump + AI Tools/Coming Soon as horizontal pill tiles +
          dark-mode-aware login/signup/forgot/onboarding + onboarding theme toggle)
-[next]   feat(upload+ux): real PDF upload + share + bookmarks message + tile redesign
+86d0ab6  feat(upload+ux): real PDF upload + share + bookmarks message + tile redesign
          (Upload now writes to Firebase Storage at Resources/{...} + 3 Firestore
          indexes; Subject Resources tiles redesigned as vertical pills; Share
          uses Play Store deep link; "PDF storage not connected" message replaced
          with the real reason; backend/scripts/ audit utilities)
+a600e0a  fix(auth): reset user-scoped Riverpod state on logout/login + demo script
+59f4157  feat(backend): Railway deployment + JSON-string Firebase credentials
+f931b33  feat(flutter): point AI backend at Railway-hosted service
+
+--- 2026-05-09 (HEAD) ---
+a871481  chore: add AA DEMO assessment materials, move AKRAM.md into AA DEMO/
 ```
 
+### ⚠️ Uncommitted work done since (May–Aug 2026, not in any commit)
+
+A large JNTUH + OU curriculum bulk upload ran in May 2026 via the untracked
+`backend/scripts/bulk_upload_*.py` utilities. It took the Storage bucket from
+~152 blobs to **6,481 PDFs / ~31 GB** and deleted the legacy `Universities/`
+stray blobs. The scripts themselves were never committed.
+
 **Status:** All 28 features ship in code. **5 AI backends live on local FastAPI:** PYQ Analyzer (5 agents), Study Planner (4 agents), Adversarial Examiner (4 agents, generator-critic), Snap a Doubt (Gemini Vision + 4 agents), AllyBot (single LLM call + RAG with resource_id_filter). 3 AI features still on mocks but **hidden from the home screen UI**: Knowledge Map, Gen UI, Project Copilot. Phase 3 community features (Jobs, Channels, Marketplace) shown as "Coming Soon" — code wired, Firestore rules deployed.
+
+---
+
+## 📚 Documentation Map & Context Loading Protocol
+
+**Read this file first, in full.** Then read the doc(s) below that match your
+task — before writing code, not after. Each is marked with how far it can be
+trusted as of 2026-08-27.
+
+| Doc | Covers | Read it when | Accuracy |
+|---|---|---|---|
+| `AGENTS.md` (here + workspace root) | Hard rules for any AI agent | Always, if you are Codex or a non-Claude tool | ✅ Current |
+| `docs/AGENTIC_FEATURES.md` | The 5 AI features end-to-end: crews, agents, tasks, RAG pipeline, code paths | Any AI / backend / RAG work | ✅ Current — the most reliable deep-dive |
+| `docs/FIRESTORE_SCHEMA.md` | Every collection, field, rule status, index, plus the `RagChunks` vector store | Any Firestore read/write/rule change | ✅ Current |
+| `docs/ARCHITECTURE.md` | Flutter structure, 31 routes, state management, deep-link allow-list, assets, deps | Any UI / navigation / provider work | ✅ Refreshed 2026-08-27 |
+| `backend/README.md` | How to run the FastAPI backend + the Railway deploy procedure | Running or deploying the backend | ✅ Current |
+| `functions/README.md` | The `stopBilling` billing hard-cap function | Billing / cost-cap work | ✅ Current |
+| `docs/REACT_NATIVE_REFERENCE.md` · `docs/WEB_REFERENCE.md` · `docs/CLOUD_FUNCTIONS.md` | The three legacy codebases in `../Academic Ally Legacy/` | Checking how the original app behaved | ✅ Reference only |
+| `docs/archive/` | Executed plans and abandoned approaches, indexed by `STALE.md` | Archaeology only | 🔴 **Deliberately out of date — do not act on it** |
+
+That is the complete active documentation set: **six live docs plus this file.**
+It is kept deliberately small. Before adding a new doc, ask whether the content
+belongs in an existing one — and when a doc's plan gets executed, move it to
+`docs/archive/` and add an entry to `STALE.md` rather than leaving it to rot.
+Presentation and coursework material never belongs in this repo at all.
+
+**Protocol:**
+1. `CLAUDE.md` (this file) → the status banner + gotchas are non-negotiable context.
+2. The matching deep-dive doc above.
+3. Then verify against **live source** — code, the bucket, Firestore. Where a doc
+   and reality disagree, reality wins and the doc gets fixed in the same session.
+   (Docs here have been wrong before: this file claimed 800/100 chunking and a
+   non-existent "Verifier" agent, and `ARCHITECTURE.md` still described PDFs as
+   living on Cloudflare R2 behind a placeholder viewer. All corrected 2026-08-27.)
 
 ---
 
@@ -193,7 +275,7 @@ PYQ has a 24h cache at PyqAnalysis/{uni}/{course}/{branch}/{sem}/{subject}.
 - **LLM:** Google Gemini 2.5 Flash Lite via litellm (configurable via `LLM_MODEL` env var without restart)
 - **Embeddings:** `gemini-embedding-001` @ 768d (RETRIEVAL_DOCUMENT for ingestion, RETRIEVAL_QUERY at retrieval)
 - **Vector store:** Firestore Vector Search at `RagChunks/{subject_key}/chunks/{chunkId}` where `subject_key = {uni}_{course}_{branch}_{sem}_{subject}`
-- **Chunking:** 800-char chunks with 100-char overlap, page numbers attached at ingestion
+- **Chunking:** **2000-char chunks with 200-char overlap** (`CHUNK_SIZE`/`CHUNK_OVERLAP` in `backend/app/shared/rag/pdf_chunker.py`), page numbers attached at ingestion
 - **Web search:** Tavily (free tier 1000 searches/month)
 - **Auth — two schemes:**
   - `Authorization: Bearer <id_token>` — Firebase ID token (Flutter app)
@@ -219,7 +301,8 @@ cd academic_ally/backend
 
 ### PDF Storage — Firebase Storage (R2 abandoned)
 
-- **Bucket layout has TWO prefixes** (verified 2026-04-26 against the live bucket — total ~152 blobs / ~236 MB):
+- **Bucket contents (verified 2026-08-27 by a full listing):** `Resources/` **6,481 PDFs**, `Avatars/` 14, `logo/` 10, `Doubts/` 5, `SeekHub/` 4 — **~31 GB total**. The legacy `Universities/` stray blobs described below have since been DELETED. 31 GB is far past Spark's 5 GB free tier, so **the project structurally requires Blaze**.
+- **Bucket layout** (the `Universities/` prefix is historical — kept here for context only):
   - `Resources/{uni}/{course}/{branch}/{sem}/{type}/{subject}/{filename}.pdf` — the **curriculum PDFs** (~132 files) AND **all new community uploads** (since 2026-04-27 the in-app Upload feature writes here too, with a `{uploadId}_` prefix on the filename to avoid collisions). `type` = `Notes` / `OtherResources` / `QuestionPapers` / `Syllabus`. Subject and sem are part of the path. This is the path Firestore docs reference via the `storageId` field.
   - `Universities/{uni}/{course}/{branch}/{randomId}` — ~20 legacy blobs from the React Native era's Upload feature, no extension, no sem/subject in path. Inert; left in bucket but no new writes go here.
 - The Firestore tree is rooted at `Universities/`; the Storage tree for curriculum PDFs is rooted at `Resources/`. **Don't conflate them** — they share top-level naming with the Firestore tree but the prefixes are different.
@@ -228,7 +311,7 @@ cd academic_ally/backend
 - Initial-page jump supported (used by Snap a Doubt citations).
 - Auto-download in background on first view; subsequent opens are instant via local cache.
 - Many legacy Firestore docs (Phase 0 RN era) have **no `storageId` field** — the resource provider filters those out via `.where((r) => r.storageId != null && r.storageId!.isNotEmpty)`, so they don't appear in the UI.
-- `R2StorageService` scaffolding still in `lib/core/services/r2_storage_service.dart` but **not used** — `publicBaseUrl` empty, code path dead. Future work could wire R2 if Firebase Storage costs become an issue.
+- **R2 is fully removed** (2026-08-27). `r2_storage_service.dart` and the `r2Endpoint`/`r2BucketName` constants were deleted — they were unreferenced dead code from an abandoned plan. If Firebase Storage egress ever becomes a cost problem, R2 would be a fresh implementation, not a revival.
 
 ### Doubt Photos — Firebase Storage (auth-gated, owner-only)
 
@@ -265,7 +348,7 @@ cd academic_ally/backend
 | Backend (Node.js) | Firebase Functions — `stopBilling` (billing cap only) |
 | Backend (Python) — Cloud | Firebase Functions Gen 2 — LEGACY: only `pyq_analyze` deployed, Flutter no longer points here |
 
-**Firebase project:** `academic-ally-app` · **Plan:** Blaze (pay-as-you-go) · **Billing cap:** ₹200/month auto-disable via `stopBilling` function (Firebase only; Gemini costs separate, uncapped)
+**Firebase project:** `academic-ally-app` · **Plan:** Blaze — ⚠️ **billing account currently CLOSED (2026-08-27), Storage returns 402** · **Billing cap:** ₹200/month auto-disable via `stopBilling` function (Firebase only; Gemini costs separate, uncapped) — re-verify the budget/Pub/Sub wiring after billing is re-linked
 
 ---
 
@@ -316,7 +399,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 5. **Known admin UID:** `8056itcLayZY8yDbNdi7KbqXnsw2` (cofounder).
 
-6. **AI backend is local-only.** `aiBackendBaseUrl = 'http://10.0.2.2:8000'` in `app_constants.dart`. The backend (`backend/`) runs on the dev machine via `./run.sh`. Android emulator reaches it via `10.0.2.2`. iOS simulator or `flutter run -d windows` needs `localhost:8000`. Physical device on same Wi-Fi needs the host's LAN IP and `--host 0.0.0.0` on uvicorn. Production deployment plan still TBD.
+6. **AI backend URL — currently BROKEN.** `aiBackendBaseUrl` in `lib/core/constants/app_constants.dart:63` is `https://academic-ally-production.up.railway.app`, and **that Railway service is DEAD** (404 "Application not found", verified 2026-08-27). All 5 AI features fail in any current build until the backend is redeployed or the URL repointed. Local fallbacks: `http://10.0.2.2:8000` (Android emulator NAT alias), `http://localhost:8000` (iOS sim / `flutter run -d windows`), host LAN IP + uvicorn `--host 0.0.0.0` (physical device on same Wi-Fi). Backend source + Railway config (`Procfile`, `railway.toml`, `nixpacks.toml`) are intact and redeployable.
 
 7. **`uv` (Astral) required for backend.** Install: `pip install --user uv` → puts binary at `%APPDATA%\Python\Python312\Scripts\uv.exe` on Windows. Ensure that path is on `PATH` or `./run.sh` fails with "uv: command not found." First `uv sync` takes ~1 minute; subsequent runs cached.
 
@@ -328,7 +411,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 11. **Home screen has 3 sections:** Quick Access (icon row) → AI Tools (4 cards: Study Planner, PYQ Analyzer, Adversarial Examiner, Snap a Doubt) → **Coming Soon...** (3 cards: Jobs, Communities, Marketplace) → Recommended. Routes for hidden features (`/knowledge-map`, `/gen-ui`, `/project-copilot`) are still wired in `app_router.dart` — only the home tiles are removed. Code is intact for re-enabling.
 
-12. **Adversarial Examiner uses generator-critic pattern.** Trap Designer creates, Verifier rejects bad questions (math errors, ambiguity, unfair traps). Don't merge those into one agent — the separation is what produces quality output.
+12. **Adversarial Examiner's real agent lineup** (verified in `backend/app/features/adversarial_examiner/agents.py`) is **Topic Selector → Trap Pattern Miner → Adversarial Question Generator → Output Formatter**. There is NO standalone "Verifier" agent — self-verification is folded into the generator's task instructions (it must RAG-check that each question sounds like the source material). Earlier docs describing a separate Verifier critic were wrong.
 
 13. **Firestore Vector Search requires a per-subject_key index.** `RagChunks/{subject_key}/chunks` queries fail until the index is created via Firebase Console or `gcloud`. Manual today; a script to automate this is on the to-do list.
 
@@ -382,7 +465,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 ## Quick Reference
 
-- **Firebase project:** `academic-ally-app` (Blaze plan, ₹200/month Firebase cap — Gemini separate)
+- **Firebase project:** `academic-ally-app` — ⚠️ **billing account CLOSED as of 2026-08-27** (Storage 402s). Was Blaze with a ₹200/month `stopBilling` cap; needs re-linking + re-verification.
 - **Primary brand color:** `#6360FF` · Tertiary: `#FF8181` · Secondary: `#F1F1FA`
 - **Font:** Poppins
 - **Support email:** `support@getacademically.co` (domain EXPIRED — update when renewed)
@@ -391,11 +474,11 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 - **Legacy deep link schemes:** `academically://` (works), `https://getacademically.co/` (domain expired), `https://app.getacademically.co/` (domain expired)
 - **FCM topic format:** `{university}_{course}_{branch}_{sem}` — sanitize to `[a-zA-Z0-9-_.~%]`
 - **APK output path** (after `flutter build apk --release`): `academic_ally/build/app/outputs/flutter-apk/app-release.apk` (universal); add `--split-per-abi` for `app-arm64-v8a-release.apk` etc.
+- **AI backend (prod):** `https://academic-ally-production.up.railway.app` — ⚠️ DEAD as of 2026-08-27, needs redeploy
 - **AI backend (dev):** `http://127.0.0.1:8000` from host · `http://10.0.2.2:8000` from Android emulator
 - **AI backend (legacy deployed, PYQ only):** `https://us-central1-academic-ally-app.cloudfunctions.net/pyq_analyze`
 - **Backend run command:** `cd academic_ally/backend && ./run.sh` (after `pip install --user uv` + ensuring `%APPDATA%\Python\Python312\Scripts` on PATH)
-- **AKRAM.md:** non-technical cofounder's presentation reference at `academic_ally/AKRAM.md`
-- **AA DEMO/:** major-project demo presentation kit (5 member scripts + README + PPTPROMPT) at `academic_ally/AA DEMO/`
+- **Presentation material lives OUTSIDE this repo:** Akram's team kit (5 member scripts, AKRAM.md, assessment briefs, PPTPROMPT) is at `../Akram's Archive/`; Shoaib's own major-project work goes in `../Shoaib Choudry Major/`. Do not re-add either to this repo.
 
 ---
 
