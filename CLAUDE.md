@@ -194,6 +194,62 @@ stray blobs. The scripts themselves were never committed.
 
 ---
 
+## 🧳 Continuity — starting on a new machine, or with a different AI agent
+
+**This file is the complete entry point.** If you have just cloned the repo and
+have no prior conversation history, everything you need is here plus `docs/`.
+
+### What you get in the clone, and what you don't
+
+The git repository root is `academic_ally/` — **not** the workspace folder above
+it. The sibling folders described in Repository Structure (`Academic Ally
+Legacy/`, `Shoaib Choudry Major/`, `Akram's Archive/`) and the workspace-root
+`CLAUDE.md`/`AGENTS.md` are **local-only and deliberately outside git**: legacy
+reference code and personal coursework have no business in the app repo. Their
+absence on a fresh machine is expected and costs you nothing — this file carries
+the orientation they provided.
+
+### Setup on a fresh machine
+
+```bash
+git clone https://github.com/Academic-Ally/Academic-Ally.git
+cd Academic-Ally
+flutter pub get          # Firebase configs ARE committed, so the app builds as-is
+flutter analyze          # should report: No issues found
+```
+
+The Flutter app runs immediately. The Python backend needs two files that are
+gitignored and can never be committed:
+
+| File | How to recreate it |
+|---|---|
+| `backend/.env` | `cp backend/.env.example backend/.env`, then fill in `GEMINI_API_KEY` (aistudio.google.com), `TAVILY_API_KEY` (tavily.com), and `BACKEND_ADMIN_KEY` (any long random string you choose) |
+| `backend/service-account.json` | Firebase Console → ⚙️ Project settings → **Service accounts** → **Generate new private key** → save as `backend/service-account.json` |
+
+Then `cd backend && ./run.sh` (requires `uv`: `pip install --user uv`, and that
+install dir on PATH). `GET /health` reports which env vars actually loaded.
+
+If the backend is being deployed rather than run locally, use
+`FIREBASE_SERVICE_ACCOUNT_JSON` instead — the whole service-account JSON pasted
+as one env var. See `backend/.env.example` and `backend/README.md`.
+
+### Expect these to be broken until fixed
+
+Read the status banner at the top of this file first. As of 2026-08-27 the
+billing account is closed (Storage 402s → no PDF opens) and the hosted backend
+is down (all AI features fail). Neither is caused by anything in the code, so
+don't debug the app looking for them.
+
+### Keeping continuity alive
+
+Chat history does not travel between machines or AI tools — **the repo is the
+only durable memory.** When you finish a significant change, update this file
+(and the matching `docs/` deep-dive) in the same commit. A doc that lies is
+worse than no doc: an agent will trust it. When a plan is executed or an
+approach abandoned, move the doc to `docs/archive/` and log it in `STALE.md`.
+
+---
+
 ## 📚 Documentation Map & Context Loading Protocol
 
 **Read this file first, in full.** Then read the doc(s) below that match your
