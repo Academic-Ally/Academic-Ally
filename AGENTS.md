@@ -14,8 +14,10 @@ AGENTIC_FEATURES, etc.) — consult the relevant one before any non-trivial task
    `Co-Authored-By: Claude` / `Co-Authored-By: Codex` or any AI attribution
    trailer, session link, or "Generated with" footer to commit messages or PR
    bodies. Clean subject + body only.
-2. **Push target:** Remote pushes go to the `flutter` branch ONLY. Never push
-   to `origin/master` (or any other branch) on GitHub.
+2. **Push target:** `master` is the default and main line as of 2026-08-27; it
+   holds the unified React Native + Flutter history. Push there, never
+   force-push it, and leave `reactnative`, `prod-fixes`, `stable`, `dev-affan`
+   and `flutteroptimalstate` untouched — they are preserved history.
 3. **Workspace root ≠ project root.** This folder (`academic_ally/`) is the
    only active project. Its parent holds `Academic Ally Legacy/` (pre-Flutter
    React Native / web / Netlify-functions code — reference only, do not edit),

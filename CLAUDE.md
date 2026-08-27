@@ -74,16 +74,26 @@ The workspace root carries its own `CLAUDE.md` + `AGENTS.md` (entry-point orient
 
 ## 🟢 Current Git State (as of 2026-08-27)
 
+**History unification (2026-08-27).** The repo used to hold two disconnected
+histories: `master` had the React Native app (all Affan's work) and `flutter` had
+the Flutter rewrite (all Shoaib's), with no common ancestor. Because GitHub only
+credits commits reachable from the **default branch**, whichever branch was made
+default would have erased the other person's contribution graph. Fix: a `-s ours`
+graft merge (`d560fd8`) recording `master`, `prod-fixes` and `dev-affan` as extra
+parents of the Flutter line — **zero file changes**, but all 155 commits are now
+reachable from `master`, so both contributors keep full credit. No force-push,
+nothing rewritten, and every original branch still exists.
+
 ```
-* flutter                          = ACTIVE branch — matches origin/flutter exactly (0 ahead / 0 behind at a871481)
-  master                           = local-only, behind flutter (do not push to GitHub master)
-  session-2026-04-19-backup        = historical work backup (superseded)
-  remotes/origin/flutter           = user's designated push target
-  remotes/origin/master            = hands-off per user rule (never push here)
-  remotes/origin/dev-affan         = cofounder Affan's RN-era work (latest 2025-01) — pre-Flutter, ignore
-  remotes/origin/prod-fixes        = Affan's RN-era Play Store fixes (latest 2025-05-30) — pre-Flutter, ignore
-  remotes/origin/stable            = Affan's RN-era stable line (2025-04) — pre-Flutter, ignore
-  remotes/origin/agentic-rag-platform = merged PR #3 branch (superseded by flutter)
+  master   (= origin/master)       = ⭐ DEFAULT + MAIN LINE since 2026-08-27. Carries the UNIFIED history:
+                                     React Native era (Affan, 79 commits) + Flutter era (Shoaib, 75 commits)
+                                     + the graft merge = 155 commits. Tip is the Flutter codebase. Push here.
+* flutter (= origin/flutter)       = points at the same commit as master; kept as a familiar alias
+  flutteroptimalstate              = frozen snapshot at f689196 (state before the history unification) — safety net
+  reactnative                      = the React Native app at its final state (v1.0.0, = prod-fixes) — do not edit
+  prod-fixes / stable / dev-affan  = Affan's original RN branches, preserved untouched
+  agentic-rag-platform             = merged PR #3 branch (superseded)
+  session-2026-04-19-backup        = historical work backup (local only, superseded)
 
 WORKING TREE IS DIRTY (uncommitted, as of 2026-08-27):
   - deletions: AA DEMO/** (moved out of the repo to ../Akram's Archive/ on 2026-08-23)
@@ -427,7 +437,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 19. **User handles APK builds manually.** Do NOT run `flutter build apk` commands — tell them the command + output path.
 
-20. **User push-to-remote rule:** Never push to `origin/master` on GitHub. All remote pushes must target the `flutter` branch.
+20. **User push-to-remote rule (CHANGED 2026-08-27):** `master` is now the default and main line, holding the unified RN + Flutter history — push there. The old "never push to master" rule is retired. Still forbidden: force-pushing `master`, and touching `reactnative` / `prod-fixes` / `stable` / `dev-affan` / `flutteroptimalstate`, which preserve history.
 
 21. **User prefers commit messages WITHOUT a `Co-Authored-By: Claude` trailer.** All new commits should be clean subject + body only.
 
