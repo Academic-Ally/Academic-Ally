@@ -46,20 +46,17 @@ class AppConstants {
     syllabus,
   ];
 
-  // Cloudflare R2 config (to be filled later)
-  static const String r2Endpoint = '';
-  static const String r2BucketName = 'academic-ally';
-
   // Cloud Functions base URL
   static const String cloudFunctionsBaseUrl =
       'https://us-central1-academic-ally-app.cloudfunctions.net';
 
-  // Python AI backend base URL.
-  // 10.0.2.2 is the Android emulator's NAT alias for the host's 127.0.0.1,
-  // letting the app reach the local FastAPI backend running on the dev
-  // machine. For iOS simulator or `flutter run -d windows`, use
-  // 'http://localhost:8000'. For a physical device on the same Wi-Fi, use
-  // the host's LAN IP (and bind uvicorn with --host 0.0.0.0).
+  // Python AI backend base URL (FastAPI + CrewAI — see backend/README.md).
+  //
+  // For local development, swap this for:
+  //   'http://10.0.2.2:8000'   Android emulator (NAT alias for the host's 127.0.0.1)
+  //   'http://localhost:8000'  iOS simulator or `flutter run -d windows`
+  //   'http://<host-LAN-IP>:8000'  physical device on the same Wi-Fi
+  //                                (bind uvicorn with --host 0.0.0.0)
   static const String aiBackendBaseUrl =
       'https://academic-ally-production.up.railway.app';
 
