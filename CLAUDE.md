@@ -450,7 +450,7 @@ cd academic_ally/backend
 
 ### Per-user AI state
 - `Users/{uid}/Misconceptions/{nodeId}` (covered by Users/** wildcard)
-- `Users/{uid}/MasteryScores/{topicId}` — exponential moving average, fed by Adversarial Examiner answers
+- `Users/{uid}/MasteryScores/{topicId}` — bounded additive update (start 0.5; **+0.10** correct, **−0.12** incorrect, clamped to [0,1]), fed by Adversarial Examiner answers. NOT an exponential moving average — see `mock_ai_service.dart:80-82`, which `AgentAIService.updateMastery()` delegates to.
 - `Users/{uid}/StudyPlans/{planId}`
 - `Users/{uid}/DoubtHistory/{doubtId}`
 - `Users/{uid}/Projects/{projectId}` (Project Copilot — hidden)
