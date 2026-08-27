@@ -88,12 +88,16 @@ nothing rewritten, and every original branch still exists.
   master   (= origin/master)       = ⭐ DEFAULT + MAIN LINE since 2026-08-27. Carries the UNIFIED history:
                                      React Native era (Affan, 79 commits) + Flutter era (Shoaib, 75 commits)
                                      + the graft merge = 155 commits. Tip is the Flutter codebase. Push here.
-* flutter (= origin/flutter)       = points at the same commit as master; kept as a familiar alias
   flutteroptimalstate              = frozen snapshot at f689196 (state before the history unification) — safety net
   reactnative                      = the React Native app at its final state (v1.0.0, = prod-fixes) — do not edit
   prod-fixes / stable / dev-affan  = Affan's original RN branches, preserved untouched
-  agentic-rag-platform             = merged PR #3 branch (superseded)
   session-2026-04-19-backup        = historical work backup (local only, superseded)
+
+DELETED 2026-08-27 (both were exact duplicates of commits already in master — zero commits lost):
+  flutter                          = had become identical to master after the graft
+  agentic-rag-platform             = merged PR #3 branch, fully contained in master
+
+Six remote branches remain: master, reactnative, flutteroptimalstate, prod-fixes, stable, dev-affan.
 
 WORKING TREE IS DIRTY (uncommitted, as of 2026-08-27):
   - deletions: AA DEMO/** (moved out of the repo to ../Akram's Archive/ on 2026-08-23)
