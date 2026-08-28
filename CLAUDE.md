@@ -13,7 +13,7 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 
 | What | State | Effect |
 |---|---|---|
-| Google Cloud billing account | **CLOSED** (trial credits expired ~Jul 2026) | Firebase Storage client API returns **HTTP 402** → no PDF opens in the app. Firestore + Auth still work, so lists render but documents fail. |
+| Google Cloud billing | **BLOCKED** — payments profile `6464-5553-6840` failed identity verification (documents rejected, resubmitted 2026-08-28). BOTH billing accounts are `open: false`. | Firebase Storage returns **HTTP 402** → no PDF opens. Firestore + Auth still work, so lists render but documents fail. A new account `01CF4E-E7121B-EBB122` is already linked to the project but needs the profile cleared plus a ₹1,000 refundable activation prepayment. See `../HANDOFF.md`. |
 | Railway backend | **DEAD** — 404 "Application not found" | All 5 AI features fail; app still points at the dead URL. |
 
 Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
@@ -31,9 +31,14 @@ has been the case since billing lapsed around July 2026.
 Treat `master` as production code. Restoring billing is urgent for users, not
 only for the major-project demo.
 
-Revival order: (1) re-link billing → Blaze, (2) redeploy backend + repoint
-`aiBackendBaseUrl`, (3) commit the dirty tree / codebase cleanup, (4) re-verify
-the `stopBilling` cap, (5) app bugs + UI work.
+Revival order: (1) clear the billing blocker (see `../HANDOFF.md` — verification,
+or the ₹1,000 prepayment, or a billing account under a different Google account),
+(2) redeploy the backend + repoint `aiBackendBaseUrl`, (3) re-verify the
+`stopBilling` cap once billing is live, (4) app bugs + UI work.
+
+**Not blocked by any of this:** 7 of the 8 thesis screenshots can be captured now
+(`MockAIService` renders every AI screen without a backend; Firestore browsing works
+on the free tier), and the PPT needs no infrastructure at all.
 
 ---
 
