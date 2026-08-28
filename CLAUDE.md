@@ -6,7 +6,7 @@ Academic Ally is a resources platform (notes, question papers, question banks, s
 
 ---
 
-## 🚨 Current Status (2026-08-27) — REVIVAL IN PROGRESS
+## 🚨 Current Status (2026-08-28) — REVIVAL IN PROGRESS, WORK HANDED OFF
 
 The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 **two pieces of infrastructure died** and both block the major-project demo:
