@@ -6,7 +6,12 @@ Academic Ally is a resources platform (notes, question papers, question banks, s
 
 ---
 
-## 🚨 Current Status (2026-08-28) — REVIVAL IN PROGRESS, WORK HANDED OFF
+## 🚨 Current Status (2026-08-29) — SUBMISSION COMPLETE, PRODUCT REVIVAL NEXT
+
+The thesis, final 25-slide presentation, and viva preparation note in the local-only
+`../Shoaib Choudry Major/` folder were completed and approved by the owner on
+2026-08-29. They are no longer part of the active backlog. Resume technical work here,
+starting with the billing/Storage outage and backend deployment described below.
 
 The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 **two pieces of infrastructure died** and both block the major-project demo:
@@ -36,9 +41,8 @@ or the ₹1,000 prepayment, or a billing account under a different Google accoun
 (2) redeploy the backend + repoint `aiBackendBaseUrl`, (3) re-verify the
 `stopBilling` cap once billing is live, (4) app bugs + UI work.
 
-**Not blocked by any of this:** 7 of the 8 thesis screenshots can be captured now
-(`MockAIService` renders every AI screen without a backend; Firestore browsing works
-on the free tier), and the PPT needs no infrastructure at all.
+The non-technical submission work is complete. Do not spend technical sessions on
+thesis screenshots or PPT work unless the owner explicitly reopens that scope.
 
 ---
 
