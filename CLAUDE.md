@@ -18,8 +18,8 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 
 | What | State | Effect |
 |---|---|---|
-| Google Cloud billing | **BLOCKED** — payments profile `6464-5553-6840` failed identity verification (documents rejected, resubmitted 2026-08-28). BOTH billing accounts are `open: false`. | Firebase Storage returns **HTTP 402** → no PDF opens. Firestore + Auth still work, so lists render but documents fail. A new account `01CF4E-E7121B-EBB122` is already linked to the project but needs the profile cleared plus a ₹1,000 refundable activation prepayment. See `../HANDOFF.md`. |
-| Railway backend | **DEAD** — 404 "Application not found" | All 5 AI features fail; app still points at the dead URL. |
+| Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` activated after the ₹1,000 prepayment. | Project is back on Blaze and Firebase Storage access recovered. Continue monitoring usage and budget alerts. |
+| Railway backend | **LIVE** — health check passes | All 5 AI endpoints are deployed at `academic-ally-production-503f.up.railway.app`; a new app release is required to replace the old URL in shipped builds. |
 
 Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
 Firestore trees (OU + JNTUH) healthy. Because 31 GB > Spark's 5 GB free tier,
@@ -36,10 +36,9 @@ has been the case since billing lapsed around July 2026.
 Treat `master` as production code. Restoring billing is urgent for users, not
 only for the major-project demo.
 
-Revival order: (1) clear the billing blocker (see `../HANDOFF.md` — verification,
-or the ₹1,000 prepayment, or a billing account under a different Google account),
-(2) redeploy the backend + repoint `aiBackendBaseUrl`, (3) re-verify the
-`stopBilling` cap once billing is live, (4) app bugs + UI work.
+Revival order: (1) verify one client-side PDF download and one AI flow end to end,
+(2) publish a Flutter release containing the restored backend URL when the cofounder
+is available, (3) re-verify the `stopBilling` cap, (4) app bugs + UI work.
 
 The non-technical submission work is complete. Do not spend technical sessions on
 thesis screenshots or PPT work unless the owner explicitly reopens that scope.
@@ -491,7 +490,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 5. **Known admin UID:** `8056itcLayZY8yDbNdi7KbqXnsw2` (cofounder).
 
-6. **AI backend URL — currently BROKEN.** `aiBackendBaseUrl` in `lib/core/constants/app_constants.dart:63` is `https://academic-ally-production.up.railway.app`, and **that Railway service is DEAD** (404 "Application not found", verified 2026-08-27). All 5 AI features fail in any current build until the backend is redeployed or the URL repointed. Local fallbacks: `http://10.0.2.2:8000` (Android emulator NAT alias), `http://localhost:8000` (iOS sim / `flutter run -d windows`), host LAN IP + uvicorn `--host 0.0.0.0` (physical device on same Wi-Fi). Backend source + Railway config (`Procfile`, `railway.toml`, `nixpacks.toml`) are intact and redeployable.
+6. **AI backend URL — restored 2026-08-29.** `aiBackendBaseUrl` in `lib/core/constants/app_constants.dart` defaults to `https://academic-ally-production-503f.up.railway.app` and supports an `AI_BACKEND_BASE_URL` dart-define override. The production `/health` check reports Gemini, Tavily, the admin key, and Firebase Admin credentials ready. Existing Play Store builds still contain the retired URL and require a new release. Local overrides: `http://10.0.2.2:8000` (Android emulator NAT alias), `http://localhost:8000` (iOS sim / `flutter run -d windows`), or host LAN IP + uvicorn `--host 0.0.0.0` (physical device on the same Wi-Fi).
 
 7. **`uv` (Astral) required for backend.** Install: `pip install --user uv` → puts binary at `%APPDATA%\Python\Python312\Scripts\uv.exe` on Windows. Ensure that path is on `PATH` or `./run.sh` fails with "uv: command not found." First `uv sync` takes ~1 minute; subsequent runs cached.
 
@@ -566,7 +565,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 - **Legacy deep link schemes:** `academically://` (works), `https://getacademically.co/` (domain expired), `https://app.getacademically.co/` (domain expired)
 - **FCM topic format:** `{university}_{course}_{branch}_{sem}` — sanitize to `[a-zA-Z0-9-_.~%]`
 - **APK output path** (after `flutter build apk --release`): `academic_ally/build/app/outputs/flutter-apk/app-release.apk` (universal); add `--split-per-abi` for `app-arm64-v8a-release.apk` etc.
-- **AI backend (prod):** `https://academic-ally-production.up.railway.app` — ⚠️ DEAD as of 2026-08-27, needs redeploy
+- **AI backend (prod):** `https://academic-ally-production-503f.up.railway.app` — live; `/health` verified 2026-08-29
 - **AI backend (dev):** `http://127.0.0.1:8000` from host · `http://10.0.2.2:8000` from Android emulator
 - **AI backend (legacy deployed, PYQ only):** `https://us-central1-academic-ally-app.cloudfunctions.net/pyq_analyze`
 - **Backend run command:** `cd academic_ally/backend && ./run.sh` (after `pip install --user uv` + ensuring `%APPDATA%\Python\Python312\Scripts` on PATH)

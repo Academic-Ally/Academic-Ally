@@ -48,8 +48,9 @@ flutter pub get && flutter run          # the app
 cd backend && ./run.sh                  # the AI backend (needs uv + backend/.env)
 ```
 
-The app reads its backend URL from `aiBackendBaseUrl` in
-`lib/core/constants/app_constants.dart`.
+The app reads its production backend URL from `aiBackendBaseUrl` in
+`lib/core/constants/app_constants.dart`. A run or build can override it with
+`--dart-define=AI_BACKEND_BASE_URL=https://your-backend.example`.
 
 ## Documentation
 

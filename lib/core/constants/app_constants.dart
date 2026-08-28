@@ -57,8 +57,10 @@ class AppConstants {
   //   'http://localhost:8000'  iOS simulator or `flutter run -d windows`
   //   'http://<host-LAN-IP>:8000'  physical device on the same Wi-Fi
   //                                (bind uvicorn with --host 0.0.0.0)
-  static const String aiBackendBaseUrl =
-      'https://academic-ally-production.up.railway.app';
+  static const String aiBackendBaseUrl = String.fromEnvironment(
+    'AI_BACKEND_BASE_URL',
+    defaultValue: 'https://academic-ally-production-503f.up.railway.app',
+  );
 
   // Chat limits
   static const int maxChatInitiations = 50;

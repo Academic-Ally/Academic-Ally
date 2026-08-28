@@ -1,6 +1,6 @@
 # Academic Ally — Local FastAPI Backend
 
-**The** AI backend for Academic Ally — a FastAPI service hosting all five agentic features (PYQ Analyzer, Study Planner, Adversarial Examiner, Snap a Doubt, AllyBot) plus the shared RAG layer. This replaced the Cloud Functions approach in [`functions_py/`](../functions_py/), which is now LEGACY and no longer called by the app. Runs on `localhost:8000` for development and deploys to Railway for production (⚠️ the Railway service is currently down — see the root `CLAUDE.md` status banner).
+**The** AI backend for Academic Ally — a FastAPI service hosting all five agentic features (PYQ Analyzer, Study Planner, Adversarial Examiner, Snap a Doubt, AllyBot) plus the shared RAG layer. This replaced the Cloud Functions approach in [`functions_py/`](../functions_py/), which is now LEGACY and no longer called by the app. Runs on `localhost:8000` for development and deploys to Railway for production. The current production service is `https://academic-ally-production-503f.up.railway.app`.
 
 ## Setup
 
@@ -126,7 +126,7 @@ The backend is set up for one-click Railway deployment.
 
 ### One-time setup
 
-1. **Push `agentic-rag-platform` (or whichever branch) to GitHub.** Railway watches the branch.
+1. **Push `master` to GitHub.** Railway watches that branch.
 2. **In Railway, create a new project from the repo, root dir `backend/`.**
 3. **Set these environment variables on the Railway service:**
 
@@ -141,7 +141,7 @@ The backend is set up for one-click Railway deployment.
    | `LOG_LEVEL` (optional) | Defaults to `INFO` |
 
 4. **Deploy.** Railway will run `uv sync --frozen --no-dev` then `uv run uvicorn …`.
-5. **Point Flutter at the Railway URL** by passing `--dart-define AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app` at build time, or by editing the constant in `lib/core/constants/app_constants.dart`.
+5. **Point Flutter at the Railway URL.** Production defaults to the URL in `lib/core/constants/app_constants.dart`; override it for a particular run or build with `--dart-define=AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app`.
 
 ### Setting `FIREBASE_SERVICE_ACCOUNT_JSON`
 
@@ -170,7 +170,7 @@ Paste the resulting string. The backend auto-detects raw vs base64 in [`firebase
 Hit the public URL:
 
 ```bash
-curl https://<your-service>.up.railway.app/health
+curl https://academic-ally-production-503f.up.railway.app/health
 ```
 
 Expect `firebase_credential_source: "service_account_env"` and `firebase_initialized: true`. If either is missing, check the env var is set and not empty in Railway's dashboard.
