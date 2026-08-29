@@ -37,10 +37,11 @@ class AgentAIService implements AIService {
       '',
     );
     final isIt =
-        normalizedBranch == 'it' || normalizedBranch == 'informationtechnology';
+        normalizedBranch == 'it' ||
+        normalizedBranch.contains('informationtechnology');
     final isEarlySemester =
-        normalizedSem == '1' ||
-        normalizedSem == '2' ||
+        normalizedSem.startsWith('1') ||
+        normalizedSem.startsWith('2') ||
         normalizedSem == 'sem1' ||
         normalizedSem == 'sem2' ||
         normalizedSem == 'semester1' ||

@@ -166,15 +166,10 @@ class AllyBotService {
     );
     final isDemoCurriculum =
         (normalizedBranch == 'it' ||
-            normalizedBranch == 'informationtechnology') &&
-        {
-          '1',
-          '2',
-          'sem1',
-          'sem2',
-          'semester1',
-          'semester2',
-        }.contains(normalizedSem);
+            normalizedBranch.contains('informationtechnology')) &&
+        (normalizedSem.startsWith('1') ||
+            normalizedSem.startsWith('2') ||
+            {'sem1', 'sem2', 'semester1', 'semester2'}.contains(normalizedSem));
     if (isDemoCurriculum) {
       await Future.delayed(const Duration(milliseconds: 1800));
       final reply =

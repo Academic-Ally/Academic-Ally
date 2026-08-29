@@ -20,7 +20,7 @@ def is_demo_curriculum(branch: str, sem: str) -> bool:
         return False
     normalized_branch = "".join(ch for ch in branch.casefold() if ch.isalnum())
     normalized_sem = "".join(ch for ch in str(sem) if ch.isdigit())
-    return normalized_branch in {"it", "informationtechnology"} and normalized_sem in {
+    return (normalized_branch == "it" or "informationtechnology" in normalized_branch) and normalized_sem in {
         "1",
         "2",
     }
