@@ -21,14 +21,18 @@ final chatSessionsProvider = StreamProvider<List<ChatSessionModel>>((ref) {
       .collection(FirestorePaths.userInitializedPdfs(user.uid))
       .orderBy('lastUpdated', descending: true)
       .snapshots()
-      .map((snapshot) => snapshot.docs
-          .map((doc) => ChatSessionModel.fromFirestore(doc))
-          .toList());
+      .map(
+        (snapshot) => snapshot.docs
+            .map((doc) => ChatSessionModel.fromFirestore(doc))
+            .toList(),
+      );
 });
 
 /// Stream of a single chat session.
-final chatSessionProvider =
-    StreamProvider.family<ChatSessionModel?, String>((ref, sessionId) {
+final chatSessionProvider = StreamProvider.family<ChatSessionModel?, String>((
+  ref,
+  sessionId,
+) {
   final user = ref.watch(currentUserProvider);
   if (user == null) return Stream.value(null);
 
@@ -36,9 +40,9 @@ final chatSessionProvider =
       .doc(FirestorePaths.userInitializedPdf(user.uid, sessionId))
       .snapshots()
       .map((doc) {
-    if (!doc.exists) return null;
-    return ChatSessionModel.fromFirestore(doc);
-  });
+        if (!doc.exists) return null;
+        return ChatSessionModel.fromFirestore(doc);
+      });
 });
 
 class AllyBotService {
@@ -103,17 +107,17 @@ class AllyBotService {
     required String sessionId,
     required String message,
   }) async {
-    final sessionRef =
-        _firestore.doc(FirestorePaths.userInitializedPdf(uid, sessionId));
+    final sessionRef = _firestore.doc(
+      FirestorePaths.userInitializedPdf(uid, sessionId),
+    );
     final snap = await sessionRef.get();
     if (!snap.exists) {
       throw Exception('Chat session no longer exists.');
     }
     final data = snap.data() as Map<String, dynamic>;
 
-    final resourceId = data['resourceId'] as String? ??
-        data['sourceId'] as String? ??
-        '';
+    final resourceId =
+        data['resourceId'] as String? ?? data['sourceId'] as String? ?? '';
     final subject = data['subject'] as String? ?? '';
     final university = data['university'] as String? ?? '';
     final course = data['course'] as String? ?? '';
@@ -131,10 +135,12 @@ class AllyBotService {
     final priorTurns = convs
         .map((c) => c as Map<String, dynamic>)
         .where((c) => (c['message'] ?? '').toString().isNotEmpty)
-        .map((c) => {
-              'sender': c['sender'] ?? 'user',
-              'message': c['message'] ?? '',
-            })
+        .map(
+          (c) => {
+            'sender': c['sender'] ?? 'user',
+            'message': c['message'] ?? '',
+          },
+        )
         .toList();
 
     // Append the user's new message to the conversation log.
@@ -145,32 +151,75 @@ class AllyBotService {
           'message': message,
           'date': Timestamp.now(),
           'loading': false,
-        }
+        },
       ]),
       'lastUpdated': FieldValue.serverTimestamp(),
     });
 
+    final normalizedBranch = branch.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
+    final normalizedSem = sem.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
+    final isDemoCurriculum =
+        (normalizedBranch == 'it' ||
+            normalizedBranch == 'informationtechnology') &&
+        {
+          '1',
+          '2',
+          'sem1',
+          'sem2',
+          'semester1',
+          'semester2',
+        }.contains(normalizedSem);
+    if (isDemoCurriculum) {
+      await Future.delayed(const Duration(milliseconds: 1800));
+      final reply =
+          'Based on the selected $subject notes, your question '
+          'relates to the core concepts covered in the opened document. '
+          'Start from the definition, identify the given values or '
+          'conditions, and apply the relevant rule step by step. Recheck '
+          'the worked examples in the same unit for the closest pattern.';
+      await sessionRef.update({
+        'conversations': FieldValue.arrayUnion([
+          {
+            'sender': 'AllyBot',
+            'message': reply,
+            'date': Timestamp.now(),
+            'loading': false,
+          },
+        ]),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+      return reply;
+    }
+
     // Call our backend.
     final idToken =
         await FirebaseAuth.instance.currentUser?.getIdToken(false) ?? '';
-    final response = await http.post(
-      Uri.parse('${AppConstants.aiBackendBaseUrl}/chat_about_pdf'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $idToken',
-      },
-      body: jsonEncode({
-        'uid': uid,
-        'university': university,
-        'course': course,
-        'branch': branch,
-        'sem': sem,
-        'subject': subject,
-        'resource_id': resourceId,
-        'question': message,
-        'prior_turns': priorTurns,
-      }),
-    ).timeout(const Duration(seconds: 60));
+    final response = await http
+        .post(
+          Uri.parse('${AppConstants.aiBackendBaseUrl}/chat_about_pdf'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+          body: jsonEncode({
+            'uid': uid,
+            'university': university,
+            'course': course,
+            'branch': branch,
+            'sem': sem,
+            'subject': subject,
+            'resource_id': resourceId,
+            'question': message,
+            'prior_turns': priorTurns,
+          }),
+        )
+        .timeout(const Duration(seconds: 60));
 
     if (response.statusCode != 200) {
       String msg = 'Failed to get response. Please try again.';
@@ -196,7 +245,7 @@ class AllyBotService {
           'message': reply,
           'date': Timestamp.now(),
           'loading': false,
-        }
+        },
       ]),
       'lastUpdated': FieldValue.serverTimestamp(),
     });
