@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_uid
 from app.errors import AgentFailureError, user_facing_message
+from app.shared.demo_fallback import chat_demo, is_demo_curriculum
 
 from .handler import run_chat_about_pdf
 from .schema import ChatRequest
@@ -27,6 +28,12 @@ async def chat_about_pdf(req: ChatRequest, uid: str = Depends(get_uid)) -> dict:
         "chat_about_pdf uid=%s subject=%s resource_id=%s prior_turns=%d",
         uid, req.subject, req.resource_id, len(req.prior_turns),
     )
+
+    if is_demo_curriculum(req.branch, req.sem):
+        logger.warning(
+            "Chat demo fallback active for branch=%s sem=%s", req.branch, req.sem
+        )
+        return chat_demo(req.subject, req.question)
 
     try:
         response = await run_chat_about_pdf(req)

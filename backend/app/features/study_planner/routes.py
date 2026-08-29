@@ -8,6 +8,11 @@ from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 
 from app.deps import get_uid
 from app.errors import AgentFailureError, user_facing_message
+from app.shared.demo_fallback import (
+    animate_demo_progress,
+    is_demo_curriculum,
+    study_plan_demo,
+)
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
 from .agents import TRACKER_AGENT_NAMES
@@ -57,6 +62,20 @@ async def generate_study_plan(
         subject=", ".join(req.subjects),
         agent_names=TRACKER_AGENT_NAMES,
     )
+
+    if is_demo_curriculum(req.branch, req.sem):
+        logger.warning(
+            "Study-plan demo fallback active for branch=%s sem=%s",
+            req.branch,
+            req.sem,
+        )
+        await animate_demo_progress(req.run_id, TRACKER_AGENT_NAMES)
+        plan_id, payload = study_plan_demo(
+            req.subjects, req.exam_date, req.daily_study_minutes
+        )
+        _persist_plan(uid, plan_id, payload)
+        mark_complete(req.run_id)
+        return {"plan_id": plan_id, **payload}
 
     try:
         output = await run_study_plan_generation(req)

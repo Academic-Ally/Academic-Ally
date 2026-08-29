@@ -92,6 +92,7 @@ def health() -> dict:
         "has_admin_key": bool(settings.backend_admin_key),
         "firebase_credential_source": cred_source,
         "firebase_initialized": bool(firebase_admin._apps),
+        "demo_fallback_enabled": settings.demo_fallback_enabled,
     }
 
 

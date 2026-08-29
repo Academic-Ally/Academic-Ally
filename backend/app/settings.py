@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     google_application_credentials: str | None = None
     backend_storage_bucket: str = "academic-ally-app.appspot.com"
     log_level: str = "INFO"
+    demo_fallback_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

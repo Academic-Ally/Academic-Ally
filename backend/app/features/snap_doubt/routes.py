@@ -8,6 +8,11 @@ from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 
 from app.deps import get_uid
 from app.errors import AgentFailureError, ValidationError, user_facing_message
+from app.shared.demo_fallback import (
+    animate_demo_progress,
+    is_demo_curriculum,
+    snap_doubt_demo,
+)
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
 from .agents import TRACKER_AGENT_NAMES
@@ -68,6 +73,19 @@ async def solve_doubt(
         subject=req.subject,
         agent_names=TRACKER_AGENT_NAMES,
     )
+
+    if is_demo_curriculum(req.branch, req.sem):
+        logger.warning(
+            "Snap-a-Doubt demo fallback active for branch=%s sem=%s",
+            req.branch,
+            req.sem,
+        )
+        await animate_demo_progress(req.run_id, TRACKER_AGENT_NAMES)
+        image_url = _public_image_url(req.storage_id)
+        payload = snap_doubt_demo(req.subject, image_url)
+        _persist_doubt(uid, req.doubt_id, payload)
+        mark_complete(req.run_id)
+        return {"doubt_id": req.doubt_id, **payload}
 
     try:
         output = await run_snap_doubt(req)

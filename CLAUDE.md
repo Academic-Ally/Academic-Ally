@@ -21,6 +21,13 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 | Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` activated after the ₹1,000 prepayment. | Project is back on Blaze and Firebase Storage access recovered. Continue monitoring usage and budget alerts. |
 | Railway backend | **LIVE** — health check passes | All 5 AI endpoints are deployed at `academic-ally-production-503f.up.railway.app`; a new app release is required to replace the old URL in shipped builds. |
 
+**Presentation safeguard (2026-08-29):** the current Gemini API account returns
+`429 RESOURCE_EXHAUSTED` because its prepayment credits are depleted. Do not enable
+or change billing without the owner. While `DEMO_FALLBACK_ENABLED=true`, requests for
+the IT branch in semesters 1 and 2 use deterministic backend responses and still
+advance the normal Firestore agent-progress tracker. Set the flag to `false` after
+Gemini quota is restored; all other curricula continue to use the live AI path.
+
 Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
 Firestore trees (OU + JNTUH) healthy. Because 31 GB > Spark's 5 GB free tier,
 **Blaze is mandatory** — there is no free-tier path back.

@@ -139,6 +139,7 @@ The backend is set up for one-click Railway deployment.
    | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full content of `service-account.json` (see below) |
    | `LLM_MODEL` (optional) | Defaults to `gemini/gemini-2.5-flash-lite` |
    | `LOG_LEVEL` (optional) | Defaults to `INFO` |
+   | `DEMO_FALLBACK_ENABLED` (temporary) | Defaults to `true`; serves deterministic demo responses only for IT semesters 1–2 while Gemini quota is unavailable. Set `false` after quota is restored. |
 
 4. **Deploy.** Railway will run `uv sync --frozen --no-dev` then `uv run uvicorn …`.
 5. **Point Flutter at the Railway URL.** Production defaults to the URL in `lib/core/constants/app_constants.dart`; override it for a particular run or build with `--dart-define=AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app`.
