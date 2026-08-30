@@ -139,7 +139,7 @@ Mark run complete
 Return JSON to Flutter
 ```
 
-### 2.3 Demo behaviour
+### 2.3 Output behaviour
 
 Each predicted question carries:
 - A `topic` it tests

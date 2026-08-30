@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.deps import get_uid
 from app.errors import AgentFailureError, user_facing_message
 from app.shared.cache import read_cache, write_cache
-from app.shared.demo_fallback import animate_demo_progress, is_demo_curriculum, pyq_demo
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
 from .agents import TRACKER_AGENT_NAMES
@@ -39,14 +38,6 @@ async def pyq_analyze(req: PyqAnalyzeRequest, uid: str = Depends(get_uid)) -> di
         subject=req.subject,
         agent_names=TRACKER_AGENT_NAMES,
     )
-
-    if is_demo_curriculum(req.branch, req.sem):
-        logger.warning("PYQ demo fallback active for branch=%s sem=%s", req.branch, req.sem)
-        await animate_demo_progress(req.run_id, TRACKER_AGENT_NAMES)
-        doc = pyq_demo(req.subject, req.pyq_resource_ids)
-        write_cache(cache_key, doc)
-        mark_complete(req.run_id)
-        return doc
 
     try:
         output = await run_pyq_analysis(req)

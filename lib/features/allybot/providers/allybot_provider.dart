@@ -156,42 +156,6 @@ class AllyBotService {
       'lastUpdated': FieldValue.serverTimestamp(),
     });
 
-    final normalizedBranch = branch.toLowerCase().replaceAll(
-      RegExp(r'[^a-z0-9]'),
-      '',
-    );
-    final normalizedSem = sem.toLowerCase().replaceAll(
-      RegExp(r'[^a-z0-9]'),
-      '',
-    );
-    final isDemoCurriculum =
-        (normalizedBranch == 'it' ||
-            normalizedBranch.contains('informationtechnology')) &&
-        (normalizedSem.startsWith('1') ||
-            normalizedSem.startsWith('2') ||
-            {'sem1', 'sem2', 'semester1', 'semester2'}.contains(normalizedSem));
-    if (isDemoCurriculum) {
-      await Future.delayed(const Duration(milliseconds: 1800));
-      final reply =
-          'Based on the selected $subject notes, your question '
-          'relates to the core concepts covered in the opened document. '
-          'Start from the definition, identify the given values or '
-          'conditions, and apply the relevant rule step by step. Recheck '
-          'the worked examples in the same unit for the closest pattern.';
-      await sessionRef.update({
-        'conversations': FieldValue.arrayUnion([
-          {
-            'sender': 'AllyBot',
-            'message': reply,
-            'date': Timestamp.now(),
-            'loading': false,
-          },
-        ]),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-      return reply;
-    }
-
     // Call our backend.
     final idToken =
         await FirebaseAuth.instance.currentUser?.getIdToken(false) ?? '';

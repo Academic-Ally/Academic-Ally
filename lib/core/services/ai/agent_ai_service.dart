@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -10,69 +9,15 @@ import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/ai_models.dart';
 import 'ai_service.dart';
-import 'mock_ai_service.dart';
 
-/// AIService backed by the Python Firebase Cloud Functions multi-agent
-/// backend. Phase 4b only implements [analyzePyq] end-to-end; the other
-/// seven methods delegate to [MockAIService] so the rest of the app keeps
-/// working against canned responses until their crews are ported in
-/// subsequent plans.
+/// AIService backed by the deployed Python multi-agent backend.
 class AgentAIService implements AIService {
-  AgentAIService({http.Client? httpClient, Uuid? uuid, AIService? fallback})
+  AgentAIService({http.Client? httpClient, Uuid? uuid})
     : _http = httpClient ?? http.Client(),
-      _uuid = uuid ?? const Uuid(),
-      _fallback = fallback ?? MockAIService();
+      _uuid = uuid ?? const Uuid();
 
   final http.Client _http;
   final Uuid _uuid;
-  final AIService _fallback;
-
-  bool _isDemoCurriculum(String branch, String sem) {
-    final normalizedBranch = branch.toLowerCase().replaceAll(
-      RegExp(r'[^a-z0-9]'),
-      '',
-    );
-    final normalizedSem = sem.toLowerCase().replaceAll(
-      RegExp(r'[^a-z0-9]'),
-      '',
-    );
-    final isIt =
-        normalizedBranch == 'it' ||
-        normalizedBranch.contains('informationtechnology');
-    final isEarlySemester =
-        normalizedSem.startsWith('1') ||
-        normalizedSem.startsWith('2') ||
-        normalizedSem == 'sem1' ||
-        normalizedSem == 'sem2' ||
-        normalizedSem == 'semester1' ||
-        normalizedSem == 'semester2';
-    return isIt && isEarlySemester;
-  }
-
-  Future<void> _animateDemoRun({
-    required String runId,
-    required String subject,
-    required List<String> agents,
-  }) async {
-    final ref = FirebaseFirestore.instance.doc('AnalysisRuns/$runId');
-    await ref.set({
-      'runId': runId,
-      'subject': subject,
-      'status': 'running',
-      'agents': {for (final agent in agents) agent: 'pending'},
-      'createdAt': FieldValue.serverTimestamp(),
-      'demoFallback': true,
-    });
-    for (final agent in agents) {
-      await Future.delayed(const Duration(milliseconds: 350));
-      await ref.update({'agents.$agent': 'done'});
-    }
-    await ref.update({
-      'status': 'complete',
-      'completedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
   @override
   Future<PyqAnalysis> analyzePyq({
     required String university,
@@ -131,28 +76,6 @@ class AgentAIService implements AIService {
     required String subject,
     required List<String> pyqResourceIds,
   }) async {
-    if (_isDemoCurriculum(branch, sem)) {
-      await _animateDemoRun(
-        runId: runId,
-        subject: subject,
-        agents: const [
-          'syllabus',
-          'webResearch',
-          'pattern',
-          'predictor',
-          'formatter',
-        ],
-      );
-      final analysis = await _fallback.analyzePyq(
-        university: university,
-        course: course,
-        branch: branch,
-        sem: sem,
-        subject: subject,
-        pyqResourceIds: pyqResourceIds,
-      );
-      return PyqAnalysisWithRunId(analysis: analysis, runId: runId);
-    }
     final idToken = await _freshIdToken();
     final uri = Uri.parse('${AppConstants.aiBackendBaseUrl}/pyq_analyze');
     final response = await _http
@@ -247,8 +170,9 @@ class AgentAIService implements AIService {
     }
   }
 
-  // The 7 non-PYQ methods delegate to MockAIService so those features
-  // keep working on canned responses until their crews are ported.
+  Future<T> _notImplementedByBackend<T>(String feature) => Future<T>.error(
+    UnsupportedError('$feature is not available from the live AI backend yet.'),
+  );
 
   @override
   Future<List<Misconception>> tagMisconceptions({
@@ -257,21 +181,14 @@ class AgentAIService implements AIService {
     required String questionText,
     required String userAnswer,
     required String correctAnswer,
-  }) => _fallback.tagMisconceptions(
-    subject: subject,
-    topic: topic,
-    questionText: questionText,
-    userAnswer: userAnswer,
-    correctAnswer: correctAnswer,
-  );
+  }) => _notImplementedByBackend<List<Misconception>>('Misconception tagging');
 
   @override
   Future<MasteryScore> updateMastery({
     required String uid,
     required String nodeId,
     required bool wasCorrect,
-  }) =>
-      _fallback.updateMastery(uid: uid, nodeId: nodeId, wasCorrect: wasCorrect);
+  }) => _notImplementedByBackend<MasteryScore>('Mastery updates');
 
   @override
   Future<StudyPlan> generateStudyPlan({
@@ -285,19 +202,6 @@ class AgentAIService implements AIService {
     List<String> weakTopics = const [],
     int dailyStudyMinutes = 120,
   }) async {
-    if (_isDemoCurriculum(branch, sem)) {
-      return _fallback.generateStudyPlan(
-        uid: uid,
-        examDate: examDate,
-        subjects: subjects,
-        university: university,
-        course: course,
-        branch: branch,
-        sem: sem,
-        weakTopics: weakTopics,
-        dailyStudyMinutes: dailyStudyMinutes,
-      );
-    }
     final runId = _uuid.v4();
     final idToken = await _freshIdToken();
     final uri = Uri.parse(
@@ -419,28 +323,6 @@ class AgentAIService implements AIService {
     List<String> focusTopics = const [],
     int questionCount = 6,
   }) async {
-    if (_isDemoCurriculum(branch, sem)) {
-      await _animateDemoRun(
-        runId: runId,
-        subject: subject,
-        agents: const [
-          'topicSelector',
-          'trapMiner',
-          'questionGenerator',
-          'formatter',
-        ],
-      );
-      final exam = await _fallback.generateAdversarialExam(
-        university: university,
-        course: course,
-        branch: branch,
-        sem: sem,
-        subject: subject,
-        focusTopics: focusTopics,
-        questionCount: questionCount,
-      );
-      return AdversarialExamWithRunId(exam: exam, runId: runId);
-    }
     final idToken = await _freshIdToken();
     final uri = Uri.parse(
       '${AppConstants.aiBackendBaseUrl}/generate_adversarial_exam',
@@ -516,23 +398,6 @@ class AgentAIService implements AIService {
     required String branch,
     required String sem,
   }) async {
-    if (_isDemoCurriculum(branch, sem)) {
-      await _animateDemoRun(
-        runId: runId,
-        subject: subject,
-        agents: const ['vision', 'retriever', 'solver', 'validator'],
-      );
-      final solution = await _fallback.solveDoubtFromImage(
-        uid: uid,
-        imagePath: imagePath,
-        subject: subject,
-        university: university,
-        course: course,
-        branch: branch,
-        sem: sem,
-      );
-      return DoubtSolutionWithRunId(solution: solution, runId: runId);
-    }
     final doubtId = _uuid.v4();
     final storageId = 'Doubts/$uid/$doubtId.jpg';
 
@@ -600,19 +465,13 @@ class AgentAIService implements AIService {
     required ProjectPhase phase,
     required Map<String, dynamic> projectContext,
     String? userQuery,
-  }) => _fallback.getProjectGuidance(
-    uid: uid,
-    projectId: projectId,
-    phase: phase,
-    projectContext: projectContext,
-    userQuery: userQuery,
-  );
+  }) => _notImplementedByBackend<ProjectGuidance>('Project guidance');
 
   @override
   Future<Map<String, dynamic>> generateUIResponse({
     required String prompt,
     required Map<String, dynamic> context,
-  }) => _fallback.generateUIResponse(prompt: prompt, context: context);
+  }) => _notImplementedByBackend<Map<String, dynamic>>('Generative UI');
 
   @override
   Future<String> chatAboutPdf({
@@ -620,12 +479,7 @@ class AgentAIService implements AIService {
     required String pdfUrl,
     required String question,
     List<Map<String, String>> priorTurns = const [],
-  }) => _fallback.chatAboutPdf(
-    uid: uid,
-    pdfUrl: pdfUrl,
-    question: question,
-    priorTurns: priorTurns,
-  );
+  }) => _notImplementedByBackend<String>('Legacy PDF chat');
 }
 
 class PyqAnalysisWithRunId {

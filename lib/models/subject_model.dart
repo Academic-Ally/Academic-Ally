@@ -18,18 +18,17 @@ class SubjectModel {
   /// both so downstream filtering against `UserModel.sem` (always string) works.
   factory SubjectModel.fromMap(Map<String, dynamic> data) {
     return SubjectModel(
-      subject: (data['subjectName'] ?? data['subject'] ?? '').toString(),
-      sem: (data['sem'] ?? '').toString(),
-      branch: (data['branch'] ?? '').toString(),
+      // QueryList contains a handful of legacy values with trailing spaces.
+      // Storage and Firestore collection IDs are canonical (trimmed), so
+      // normalize navigation keys before they are used to build paths.
+      subject: (data['subjectName'] ?? data['subject'] ?? '').toString().trim(),
+      sem: (data['sem'] ?? '').toString().trim(),
+      branch: (data['branch'] ?? '').toString().trim(),
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'subject': subject,
-      'sem': sem,
-      'branch': branch,
-    };
+    return {'subject': subject, 'sem': sem, 'branch': branch};
   }
 
   /// Generate abbreviation from subject name.
