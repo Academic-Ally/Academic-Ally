@@ -41,28 +41,42 @@ class ResourceModel {
 
   factory ResourceModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    return ResourceModel.fromMap(doc.id, data);
+  }
+
+  /// Builds a resource from Firestore-compatible map data.
+  ///
+  /// A few Phase 0 records stored numeric fields as strings. Current queries
+  /// exclude records without Storage paths, but parsing remains defensive so a
+  /// single malformed document can never take down an entire subject list.
+  factory ResourceModel.fromMap(String id, Map<String, dynamic> data) {
     // Legacy docs from the React Native era store numeric fields as
-    // doubles (e.g. views: 1.0), so coerce defensively rather than
-    // casting blindly.
+    // doubles or strings, so coerce defensively rather than casting blindly.
     return ResourceModel(
-      id: doc.id,
-      name: data['name'] ?? '',
-      subject: data['subject'] ?? '',
-      category: data['category'] ?? '',
-      rating: (data['rating'] as num?)?.toDouble() ?? 0,
-      views: (data['views'] as num?)?.toInt() ?? 0,
-      uploaderId: data['uploaderId'],
-      uploaderName: data['uploaderName'],
-      size: (data['size'] as num?)?.toDouble() ?? 0,
+      id: id,
+      name: data['name']?.toString() ?? '',
+      subject: data['subject']?.toString() ?? '',
+      category: data['category']?.toString() ?? '',
+      rating: _parseNum(data['rating'])?.toDouble() ?? 0,
+      views: _parseNum(data['views'])?.toInt() ?? 0,
+      uploaderId: data['uploaderId']?.toString(),
+      uploaderName: data['uploaderName']?.toString(),
+      size: _parseNum(data['size'])?.toDouble() ?? 0,
       sem: data['sem']?.toString() ?? '',
-      branch: data['branch'] ?? data['department'] ?? '',
-      course: data['course'],
-      university: data['university'],
+      branch: (data['branch'] ?? data['department'])?.toString().trim() ?? '',
+      course: data['course']?.toString(),
+      university: data['university']?.toString(),
       date: _parseDate(data['date']),
       units: _parseUnits(data['units']),
-      storageId: data['storageId'],
-      did: data['did'],
+      storageId: data['storageId']?.toString(),
+      did: data['did']?.toString(),
     );
+  }
+
+  static num? _parseNum(dynamic raw) {
+    if (raw is num) return raw;
+    if (raw is String) return num.tryParse(raw.trim());
+    return null;
   }
 
   static List<dynamic> _parseUnits(dynamic raw) {
@@ -72,7 +86,11 @@ class ResourceModel {
     if (raw is String) {
       final trimmed = raw.trim();
       if (trimmed.isEmpty) return const [];
-      return trimmed.split(RegExp(r'[,;]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      return trimmed
+          .split(RegExp(r'[,;]'))
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
     return const [];
   }
@@ -85,7 +103,11 @@ class ResourceModel {
       return DateTime.fromMillisecondsSinceEpoch(raw.toInt());
     }
     if (raw is String) {
-      return DateTime.tryParse(raw);
+      final parsedEpoch = num.tryParse(raw.trim());
+      if (parsedEpoch != null) {
+        return DateTime.fromMillisecondsSinceEpoch(parsedEpoch.toInt());
+      }
+      return DateTime.tryParse(raw.trim());
     }
     return null;
   }

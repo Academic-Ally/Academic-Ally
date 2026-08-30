@@ -28,8 +28,9 @@ final subjectsListProvider = FutureProvider<List<SubjectModel>>((ref) async {
 });
 
 /// Fetches recommended subjects for the current user (matching their branch + sem).
-final recommendedSubjectsProvider =
-    FutureProvider<List<SubjectModel>>((ref) async {
+final recommendedSubjectsProvider = FutureProvider<List<SubjectModel>>((
+  ref,
+) async {
   final allSubjects = await ref.watch(subjectsListProvider.future);
   final user = ref.watch(userProfileProvider).value;
   if (user == null) return [];
@@ -41,37 +42,39 @@ final recommendedSubjectsProvider =
 
 /// Provider family to fetch resource availability flags for a subject.
 /// Returns a Map like { "Notes": true, "QuestionPapers": false, ... }
-final subjectResourceFlagsProvider = FutureProvider.family<
-    Map<String, bool>,
-    ({
-      String university,
-      String course,
-      String branch,
-      String sem,
-      String subject
-    })>((ref, params) async {
-  // The SubjectsList doc has subject names as keys with boolean flags
-  final path = FirestorePaths.universityBase(
-    params.university,
-    params.course,
-    params.branch,
-    params.sem,
-  );
+final subjectResourceFlagsProvider =
+    FutureProvider.family<
+      Map<String, bool>,
+      ({
+        String university,
+        String course,
+        String branch,
+        String sem,
+        String subject,
+      })
+    >((ref, params) async {
+      // The SubjectsList doc has subject names as keys with boolean flags
+      final path = FirestorePaths.universityBase(
+        params.university,
+        params.course,
+        params.branch,
+        params.sem,
+      );
 
-  // Check each resource type collection for documents that have a
-  // ``storageId``. ``orderBy(field)`` skips docs missing that field, so
-  // we get a free "non-null storageId" filter without an explicit where.
-  final flags = <String, bool>{};
-  for (final type in AppConstants.resourceTypes) {
-    final snapshot = await _firestore
-        .collection('$path/$type/${params.subject}')
-        .orderBy('storageId')
-        .limit(1)
-        .get();
-    flags[type] = snapshot.docs.isNotEmpty;
-  }
-  return flags;
-});
+      // Check each resource type collection for documents that have a
+      // ``storageId``. ``orderBy(field)`` skips docs missing that field, so
+      // we get a free "non-null storageId" filter without an explicit where.
+      final flags = <String, bool>{};
+      for (final type in AppConstants.resourceTypes) {
+        final snapshot = await _firestore
+            .collection('$path/$type/${params.subject}')
+            .orderBy('storageId')
+            .limit(1)
+            .get();
+        flags[type] = snapshot.docs.isNotEmpty;
+      }
+      return flags;
+    });
 
 /// Fetches resources of a specific type for a subject.
 ///
@@ -79,31 +82,36 @@ final subjectResourceFlagsProvider = FutureProvider.family<
 /// ``storageId`` — those used Google Drive download links which are no
 /// longer reachable, so showing them in the UI just leads to the
 /// "Storage not configured yet" dead end.
-final resourcesProvider = FutureProvider.family<
-    List<ResourceModel>,
-    ({
-      String university,
-      String course,
-      String branch,
-      String sem,
-      String resourceType,
-      String subject
-    })>((ref, params) async {
-  final path = FirestorePaths.resources(
-    params.university,
-    params.course,
-    params.branch,
-    params.sem,
-    params.resourceType,
-    params.subject,
-  );
+final resourcesProvider =
+    FutureProvider.family<
+      List<ResourceModel>,
+      ({
+        String university,
+        String course,
+        String branch,
+        String sem,
+        String resourceType,
+        String subject,
+      })
+    >((ref, params) async {
+      final path = FirestorePaths.resources(
+        params.university,
+        params.course,
+        params.branch,
+        params.sem,
+        params.resourceType,
+        params.subject,
+      );
 
-  final snapshot = await _firestore.collection(path).get();
-  return snapshot.docs
-      .map((doc) => ResourceModel.fromFirestore(doc))
-      .where((r) => r.storageId != null && r.storageId!.isNotEmpty)
-      .toList();
-});
+      // Firestore excludes documents missing an orderBy field. Querying by
+      // storageId therefore omits the obsolete Drive-backed metadata before
+      // deserialisation, so a malformed legacy value cannot crash the whole list.
+      final snapshot = await _firestore
+          .collection(path)
+          .orderBy('storageId')
+          .get();
+      return snapshot.docs.map(ResourceModel.fromFirestore).toList();
+    });
 
 /// Increment view count for a resource.
 Future<void> incrementViewCount({
@@ -150,9 +158,7 @@ Future<void> rateResource({
   );
 
   // Update the rating on the resource
-  await _firestore.doc('$resourcePath/$resourceId').update({
-    'rating': rating,
-  });
+  await _firestore.doc('$resourcePath/$resourceId').update({'rating': rating});
 
   // Store in user's rated list
   await _firestore.doc('${FirestorePaths.userRatedList(uid)}/$resourceId').set({
