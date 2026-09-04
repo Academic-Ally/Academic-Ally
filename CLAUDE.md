@@ -11,8 +11,11 @@ consumes `retrieveLostData()` and resumes solving after the profile loads. Cance
 permission failures and recovery errors are handled; duplicate capture taps are blocked.
 The GoRouter instance also now survives auth events (redirect refresh instead of
 recreating the router at `/splash`). Regression tests cover recovery, cancellation,
-errors, account isolation and router identity. Physical-phone retest requires a new
-APK built by the owner; the existing workspace APK is still the old 1.0.1 build.
+errors, account isolation and router identity. The owner explicitly authorized an
+agent-run release build for the demo on 2026-09-05 (one exception to the manual-build
+rule). Build succeeded; `../AcademicAlly-1.0.2-release.apk` is ready to sideload.
+APK metadata confirms `com.academically`, version `1.0.2`, code `3`; the root copy
+matches the build output by SHA-256. Physical-phone capture retest remains pending.
 Validation: `flutter analyze --no-pub` reports no issues; `flutter test` passes
 all 10 tests (including six new regressions). Only Flutter changed; no backend
 redeploy or Firebase data changes are needed.
