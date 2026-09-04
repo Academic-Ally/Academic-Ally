@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     google_application_credentials: str | None = None
     backend_storage_bucket: str = "academic-ally-app.appspot.com"
     log_level: str = "INFO"
+    # When true, failed AI requests also return the raw exception text and a
+    # traceback tail in the HTTP error body. Off by default so production
+    # clients only ever see the plain-English message; flip on for local
+    # debugging (EXPOSE_DEBUG_ERRORS=true). Full tracebacks are always logged.
+    expose_debug_errors: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",

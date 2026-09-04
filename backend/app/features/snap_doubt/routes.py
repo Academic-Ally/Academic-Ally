@@ -7,7 +7,7 @@ from firebase_admin import firestore, storage
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 
 from app.deps import get_uid
-from app.errors import AgentFailureError, ValidationError, user_facing_message
+from app.errors import AgentFailureError, ValidationError, error_detail
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
 from .agents import TRACKER_AGENT_NAMES
@@ -86,11 +86,7 @@ async def solve_doubt(
         status_code = 503 if isinstance(exc, AgentFailureError) else 500
         raise HTTPException(
             status_code=status_code,
-            detail={
-                "error": user_facing_message(exc),
-                "debug_error": str(exc)[:2000],
-                "debug_traceback": tb[-2000:],
-            },
+            detail=error_detail(exc, tb),
         )
 
     image_url = _public_image_url(req.storage_id)

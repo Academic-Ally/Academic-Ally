@@ -7,6 +7,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/screen_layout.dart';
 import '../../../models/subject_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../resources/providers/resources_provider.dart';
 import '../providers/search_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -238,7 +239,7 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
-class _SubjectTile extends StatelessWidget {
+class _SubjectTile extends ConsumerWidget {
   final SubjectModel subject;
   final bool isDark;
   final VoidCallback onTap;
@@ -250,7 +251,30 @@ class _SubjectTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // QueryList lists every curriculum subject, including ones that have no
+    // PDFs uploaded yet (typically labs). Surface that up front so students
+    // don't open a subject only to find four "Empty" categories. The flags
+    // provider issues one limit(1) query per category and is cached per
+    // subject, and ListView.builder only builds visible rows, so scrolling a
+    // long unfiltered list stays cheap.
+    final user = ref.watch(userProfileProvider).value;
+    final flagsAsync = user == null
+        ? null
+        : ref.watch(
+            subjectResourceFlagsProvider((
+              university: user.university,
+              course: user.course,
+              branch: subject.branch,
+              sem: subject.sem,
+              subject: subject.subject,
+            )),
+          );
+    // Riverpod 3: `value` is null until the first result arrives, so a tile
+    // shows no badge while loading and never flickers.
+    final flags = flagsAsync?.value;
+    final isEmpty = flags != null && flags.values.every((has) => !has);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -310,6 +334,25 @@ class _SubjectTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (isEmpty) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : const Color(0xFFECECF2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'No files yet',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.faintText,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             const Icon(Icons.chevron_right,
                 color: Color(0xFF91919F), size: 20),
           ],

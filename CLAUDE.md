@@ -238,6 +238,14 @@ flutter pub get          # Firebase configs ARE committed, so the app builds as-
 flutter analyze          # should report: No issues found
 ```
 
+**JDK gotcha (2026-09-04):** Android Studio's bundled JBR is now **Java 25**, which
+Gradle 8.14 (this project's wrapper) refuses to run on — `flutter run`/`flutter build`
+fail with the cryptic `What went wrong: 25.0.2`. Fix once per machine: install a JDK 21
+(`winget install EclipseAdoptium.Temurin.21.JDK`) and run
+`flutter config --jdk-dir="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"`
+(adjust the path to whatever was installed). This is a user-level Flutter setting, not
+a repo change.
+
 The Flutter app runs immediately. The Python backend needs two files that are
 gitignored and can never be committed:
 
@@ -508,7 +516,7 @@ All paths defined in `lib/core/constants/firestore_paths.dart`. Full schema in `
 
 8. **Backend `.env` must contain valid `GOOGLE_APPLICATION_CREDENTIALS`** pointing to a Firebase service-account JSON. Without it, Bearer-token auth and Firestore writes fail. The Admin bypass scheme (`Authorization: Admin <key>:<uid>`) still works for curl.
 
-9. **`functions_py/` is LEGACY.** Only PYQ Analyzer was ever deployed there. The Flutter app no longer points at it (`aiBackendBaseUrl` is now local FastAPI). Keep `functions_py/` around for potential future deploy, but do NOT add new features there — add them to `backend/`.
+9. **`functions_py/` is LEGACY but not deletable yet.** Only PYQ Analyzer was ever deployed there and the Flutter app no longer calls it. It is kept because it is the only source of the **still-deployed, still-useful `cleanup_old_trackers`** scheduled Cloud Function (hourly deletion of stale `AnalysisRuns/{runId}` docs) and it holds the 21 legacy pytest tests. Do NOT add features there — add them to `backend/`. Delete it only after the cleanup job has been re-homed (e.g. into `functions/` or a Railway cron).
 
 10. **AllyBot is no longer Netlify.** The old Netlify ChatPDF function in `academic-ally-cloud-functions-main/` (workspace sibling) is DORMANT. Do not edit it. AllyBot now hits `/chat_about_pdf` on the local FastAPI backend.
 
@@ -597,7 +605,7 @@ Most of the original Phase 4 list shipped in commit `4f7ed09`. Remaining:
 6. **Vector Search index automation** — script to create per-subject_key indexes (manual via Console today).
 7. **LaTeX rendering** for Snap a Doubt (nice-to-have).
 8. **Dart-side automated tests** — Python has 21 green tests; Dart has zero. Start with FCM idempotency, deep-link parsing, topic sanitization, mastery EMA.
-9. **Revert `debug_error` / `debug_traceback`** in `functions_py/features/pyq_analyzer/handler.py` before any public release.
+9. ~~Revert `debug_error` / `debug_traceback`~~ — DONE for `backend/` on 2026-09-04: the five routes now build their error body via `app/errors.py::error_detail`, which only attaches the raw exception and traceback tail when `EXPOSE_DEBUG_ERRORS=true` (default `false`). The legacy `functions_py/features/pyq_analyzer/handler.py` still leaks them but is no longer called by the app.
 10. **Pre-deploy script** for `functions_py/` to auto-handle the `.env` rename dance (only relevant if we redeploy).
 11. **Production deployment plan for `backend/`** — Cloud Run, Fly.io, or similar. Currently localhost-only; demo-only setup.
 12. **Backend RAG-layer tests** — extend pytest coverage to embedder rate-limit, vector store, and the 4 non-PYQ feature crews.

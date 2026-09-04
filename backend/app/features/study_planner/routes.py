@@ -7,7 +7,7 @@ from firebase_admin import firestore
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 
 from app.deps import get_uid
-from app.errors import AgentFailureError, user_facing_message
+from app.errors import AgentFailureError, error_detail
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
 from .agents import TRACKER_AGENT_NAMES
@@ -67,11 +67,7 @@ async def generate_study_plan(
         status_code = 503 if isinstance(exc, AgentFailureError) else 500
         raise HTTPException(
             status_code=status_code,
-            detail={
-                "error": user_facing_message(exc),
-                "debug_error": str(exc)[:2000],
-                "debug_traceback": tb[-2000:],
-            },
+            detail=error_detail(exc, tb),
         )
 
     payload = output.to_firestore_dict()

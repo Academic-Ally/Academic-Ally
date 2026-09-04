@@ -5,7 +5,7 @@ import traceback
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_uid
-from app.errors import AgentFailureError, user_facing_message
+from app.errors import AgentFailureError, error_detail
 from app.shared.cache import read_cache, write_cache
 from app.shared.progress import init_tracker, mark_complete, mark_failed
 
@@ -48,11 +48,7 @@ async def pyq_analyze(req: PyqAnalyzeRequest, uid: str = Depends(get_uid)) -> di
         status_code = 503 if isinstance(exc, AgentFailureError) else 500
         raise HTTPException(
             status_code=status_code,
-            detail={
-                "error": user_facing_message(exc),
-                "debug_error": str(exc)[:2000],
-                "debug_traceback": tb[-2000:],
-            },
+            detail=error_detail(exc, tb),
         )
 
     doc = output.to_firestore_dict()

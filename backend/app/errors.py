@@ -44,3 +44,20 @@ def user_facing_message(err: Exception) -> str:
         if isinstance(err, cls):
             return msg
     return "Something went wrong. Please try again."
+
+
+def error_detail(err: Exception, tb: str | None = None) -> dict:
+    """Build the ``detail`` payload for an HTTPException raised by a feature route.
+
+    Always carries the user-facing message. Raw exception text and the traceback
+    tail are attached only when ``EXPOSE_DEBUG_ERRORS`` is enabled, so a
+    production deployment never leaks internals to the app.
+    """
+    from app.settings import settings  # local import: settings must not depend on errors
+
+    detail: dict = {"error": user_facing_message(err)}
+    if settings.expose_debug_errors:
+        detail["debug_error"] = str(err)[:2000]
+        if tb:
+            detail["debug_traceback"] = tb[-2000:]
+    return detail

@@ -5,7 +5,7 @@ import traceback
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_uid
-from app.errors import AgentFailureError, user_facing_message
+from app.errors import AgentFailureError, error_detail
 
 from .handler import run_chat_about_pdf
 from .schema import ChatRequest
@@ -36,11 +36,7 @@ async def chat_about_pdf(req: ChatRequest, uid: str = Depends(get_uid)) -> dict:
         status_code = 503 if isinstance(exc, AgentFailureError) else 500
         raise HTTPException(
             status_code=status_code,
-            detail={
-                "error": user_facing_message(exc),
-                "debug_error": str(exc)[:2000],
-                "debug_traceback": tb[-2000:],
-            },
+            detail=error_detail(exc, tb),
         )
 
     return {

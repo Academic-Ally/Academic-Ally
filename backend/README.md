@@ -99,9 +99,9 @@ app/
 - `await crew.akickoff(...)` instead of sync `crew.kickoff(...)` for non-blocking event loop
 - Progress + cache write to **Firestore when `GOOGLE_APPLICATION_CREDENTIALS` is set**, otherwise fall back to an in-memory dict (curl smoke tests still work without Firebase creds)
 - Auth supports an `Admin` scheme for keyless dev requests
-- No scheduled cleanup function (`AnalysisRuns/{runId}` docs accumulate; the prod scheduler in `functions_py/features/maintenance` cleans them up)
+- No scheduled cleanup function of its own. The hourly `cleanup_old_trackers` Cloud Function (source in `functions_py/features/maintenance`, still deployed) deletes stale `AnalysisRuns/{runId}` docs.
 
-`functions_py/` remains the deploy target. This service is purely for local iteration.
+This service **is** the production backend (Railway). `functions_py/` is kept only because it is the source of the still-deployed `cleanup_old_trackers` scheduler.
 
 ### Firestore behavior
 
@@ -139,6 +139,7 @@ The backend is set up for one-click Railway deployment.
    | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full content of `service-account.json` (see below) |
    | `LLM_MODEL` (optional) | Defaults to `gemini/gemini-2.5-flash-lite` |
    | `LOG_LEVEL` (optional) | Defaults to `INFO` |
+   | `EXPOSE_DEBUG_ERRORS` (optional) | Defaults to `false`. When `true`, failed AI requests also return `debug_error` / `debug_traceback` in the error body. Keep it off in production. |
 
 4. **Deploy.** Railway will run `uv sync --frozen --no-dev` then `uv run uvicorn …`.
 5. **Point Flutter at the Railway URL.** Production defaults to the URL in `lib/core/constants/app_constants.dart`; override it for a particular run or build with `--dart-define=AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app`.
