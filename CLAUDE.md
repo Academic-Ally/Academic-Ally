@@ -19,7 +19,7 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 | What | State | Effect |
 |---|---|---|
 | Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` is `OPEN=True`, linked to `academic-ally-app` with `billingEnabled: true` (verified with `gcloud` 2026-09-04). | Project is on Blaze; Firebase Storage serves PDFs again. The account was activated with a ₹1,000 UPI prepayment; the prepaid→postpaid question is documented in the owner's local-only workspace-root `CLAUDE.md` (Handoff log). |
-| Gemini API | **PAID TIER** — the AI Studio project `gen-lang-client-0505555931` (owner of the key in `backend/.env`) is linked to the same billing account. 60 parallel `generateContent` calls returned 200 on 2026-09-04; free tier would have thrown 429s. | The `429 RESOURCE_EXHAUSTED` limitation seen on 2026-08-29 is gone. Gemini spend is **not** covered by the ₹200 `stopBilling` cap. |
+| Gemini API | **PAID TIER, served from billing account `01CF4E`** — the AI Studio project `gen-lang-client-0505555931` (owner of the key in `backend/.env` and on Railway) is linked to that account. 200 parallel `generateContent` calls in 4.6 s all returned 200 on 2026-09-04 (free tier is 15 RPM). The console also shows a separate AI Studio *prepay* wallet at ₹0 for this project, yet calls are served, so usage is landing on the postpay side. **Confirm on/after 2026-09-06 in Billing → Reports** that Generative Language API lines appear under this project. Never buy AI Studio prepay credits (Prepay→Postpay switch is unsupported). | Gemini spend is **not** covered by the ₹200 `stopBilling` cap. |
 | Railway backend | **FIXED 2026-09-04 (evening)** — Codex replaced the service's `GEMINI_API_KEY` with the working key and redeployed; `/health` no longer carries the stale-build marker (`demo_fallback_enabled`) and `backend/scripts/verify_prod_ai.py` got a genuine `/generate_study_plan` 200 in 55 s. Study Planner also verified from inside the emulator build. | **Deploys are manual until further notice:** the Railway GitHub App lost access to the repo ("GitHub Repo not found"), and only an org Owner (`affan880`) can reinstall it. After every push, redeploy from the Railway dashboard and re-check `/health` for the marker. |
 
 **Demo fallback is GONE from the code** (commit `6ab4eea`, 2026-08-30): no
@@ -46,12 +46,18 @@ work again already because Storage recovered).
 Treat `master` as production code. Restoring billing is urgent for users, not
 only for the major-project demo.
 
-Revival order: (1) ~~Railway + one genuine AI run~~ DONE 2026-09-04, (2) publish a
-Flutter release (`1.0.1+2`, signed with Affan's upload keystore — see the Play Store
-build note below) so installed apps stop pointing at the dead URL, (3) have Affan
-reinstall the Railway GitHub App so pushes auto-deploy again, (4) re-verify the
+Revival order: (1) ~~Railway + one genuine AI run~~ DONE 2026-09-04 (Study Planner
+verified from inside the app; PYQ, Examiner, Snap a Doubt and AllyBot share the same
+backend and key), (2) **on/after 2026-09-06 confirm Gemini usage shows under
+`gen-lang-client-0505555931` in Billing → Reports**, (3) publish a Flutter release
+(`1.0.1+2`, signed with Affan's upload keystore — see the Play Store build note below)
+so installed apps stop pointing at the dead URL, (4) have Affan reinstall the Railway
+GitHub App so pushes auto-deploy again (manual dashboard redeploy + `/health` check +
+`backend/scripts/verify_prod_ai.py` after every push until then), (5) re-verify the
 `stopBilling` budget wiring (`billingbudgets.googleapis.com` is not enabled on the
-project, so the budget could not be listed from `gcloud`), (5) app bugs + UI work.
+project, so the budget could not be listed from `gcloud`) and consider a ₹500 email-only
+budget on the billing account since the cap does not cover Gemini, (6) app bugs + UI
+work. Layout sweep done 2026-09-04: every Row rendering LLM/user text is now bounded.
 
 The non-technical submission work is complete. Do not spend technical sessions on
 thesis screenshots or PPT work unless the owner explicitly reopens that scope.
