@@ -1,5 +1,22 @@
 # Academic Ally
 
+## Snap a Doubt phone fix — 2026-09-05
+
+Source version is now **1.0.2+3**. The owner reported splash → home after taking
+a doubt photo. The camera flow lacked Android activity/process-death recovery:
+the picker Future disappears on restart, and splash previously always sent signed-in
+users home. `DoubtCaptureService` now saves the subject and owner before opening
+camera/gallery, splash routes pending captures to `/snap-doubt`, and that screen
+consumes `retrieveLostData()` and resumes solving after the profile loads. Cancel,
+permission failures and recovery errors are handled; duplicate capture taps are blocked.
+The GoRouter instance also now survives auth events (redirect refresh instead of
+recreating the router at `/splash`). Regression tests cover recovery, cancellation,
+errors, account isolation and router identity. Physical-phone retest requires a new
+APK built by the owner; the existing workspace APK is still the old 1.0.1 build.
+Validation: `flutter analyze --no-pub` reports no issues; `flutter test` passes
+all 10 tests (including six new regressions). Only Flutter changed; no backend
+redeploy or Firebase data changes are needed.
+
 ## What Is This?
 
 Academic Ally is a resources platform (notes, question papers, question banks, syllabi) for B.E/B.Tech engineering students at **Osmania University (OU)** and **JNTUH** in Hyderabad, Telangana. The app is **published and LIVE on the Google Play Store as `com.academically` v1.0.0 — the Flutter build**, and has been **fully migrated from React Native to Flutter** — and **expanded into an AI-native education platform** with 5 multi-agent AI features (4 multi-agent crews + AllyBot RAG chat) for a major project submission (two cofounders).

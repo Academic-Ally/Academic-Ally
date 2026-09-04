@@ -12,13 +12,62 @@ import '../../auth/providers/auth_provider.dart';
 import '../../pyq_analyzer/providers/analysis_run_provider.dart';
 import '../../resources/providers/resources_provider.dart';
 import '../providers/snap_doubt_provider.dart';
+import '../services/doubt_capture_service.dart';
 
 /// Main Snap-a-Doubt screen: shows history list + FAB to capture a new doubt.
-class SnapDoubtScreen extends ConsumerWidget {
+class SnapDoubtScreen extends ConsumerStatefulWidget {
   const SnapDoubtScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SnapDoubtScreen> createState() => _SnapDoubtScreenState();
+}
+
+class _SnapDoubtScreenState extends ConsumerState<SnapDoubtScreen> {
+  final _capture = DoubtCaptureService();
+  bool _capturing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recoverCapture());
+  }
+
+  Future<void> _recoverCapture() async {
+    try {
+      final user = await ref.read(authStateProvider.future);
+      if (user == null) return;
+      final recovered = await _capture.recover(user.uid);
+      if (recovered == null) return;
+      await ref.read(userProfileProvider.future).timeout(const Duration(seconds: 10));
+      if (!mounted) return;
+      await _showSolveSheet(context, ref, recovered.imagePath, recovered.subject);
+    } catch (_) {
+      if (mounted) _captureError();
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+    }
+  }
+
+  void _captureError() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Could not open the photo. Please try again and allow camera or photo access if asked.'),
+    ));
+  }
+
+  Future<void> _startCapture() async {
+    if (_capturing) return;
+    setState(() => _capturing = true);
+    try {
+      await _showCaptureSheet(context, ref);
+    } catch (_) {
+      if (mounted) _captureError();
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark
         ? Theme.of(context).scaffoldBackgroundColor
@@ -39,7 +88,7 @@ class SnapDoubtScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
-        onPressed: () => _showCaptureSheet(context, ref),
+        onPressed: _capturing ? null : _startCapture,
         icon: const Icon(Icons.camera_alt),
         label: Text(
           'New Doubt',
@@ -102,10 +151,13 @@ class SnapDoubtScreen extends ConsumerWidget {
     );
     if (source == null) return;
 
-    final picked = await ImagePicker().pickImage(
+    if (!context.mounted) return;
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    final picked = await _capture.pick(
+      uid: uid,
+      subject: subject,
       source: source,
-      imageQuality: 85,
-      maxWidth: 1600,
     );
     if (picked == null) return;
 
@@ -114,7 +166,8 @@ class SnapDoubtScreen extends ConsumerWidget {
   }
 
   Future<String?> _pickSubject(BuildContext context, WidgetRef ref) async {
-    final subjects = await ref.read(recommendedSubjectsProvider.future);
+    final subjects = await ref.read(recommendedSubjectsProvider.future)
+        .timeout(const Duration(seconds: 10));
     if (subjects.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

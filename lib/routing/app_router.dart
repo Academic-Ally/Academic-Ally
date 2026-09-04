@@ -49,12 +49,17 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
-  return GoRouter(
+  // Auth events must refresh redirects, not replace the navigator and reset
+  // an in-flight camera/solver flow to initialLocation.
+  final authRefresh = ValueNotifier<int>(0);
+  ref.listen(authStateProvider, (_, _) => authRefresh.value++);
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/splash',
+    refreshListenable: authRefresh,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
+      if (authState.isLoading) return null;
       final isLoggedIn = authState.value != null;
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
@@ -316,4 +321,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(() {
+    router.dispose();
+    authRefresh.dispose();
+  });
+  return router;
 });

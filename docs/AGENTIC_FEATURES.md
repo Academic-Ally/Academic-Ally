@@ -319,6 +319,14 @@ The PDF viewer uses `flutter_pdfview`'s `defaultPage` plus a deferred `controlle
 
 ### 5.5 Flutter UI flow
 
+Android recovery (2026-09-05): before launching the camera/gallery, persist the
+subject and signed-in UID in SharedPreferences through `DoubtCaptureService`.
+If Android destroys the app during capture, splash detects this marker and opens
+Snap a Doubt, which retrieves the plugin's lost image and resumes the solver after
+the profile loads. Recovery consumes the marker once and never returns a photo to
+a different account. Cancellation and picker errors clear the marker; the screen
+surfaces capture failures and blocks overlapping capture flows.
+
 1. User taps Snap-a-Doubt → subject picker (modal) → image source picker (camera or gallery) → image picker
 2. Image bytes uploaded to Firebase Storage at `Doubts/{uid}/{doubtId}.jpg`
 3. POST /solve_doubt with the storage path

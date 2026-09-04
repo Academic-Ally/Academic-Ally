@@ -105,6 +105,11 @@ academic_ally/
 
 ## GoRouter Routes (31 total)
 
+As of 2026-09-05, `routerProvider` retains one GoRouter instance and listens to
+auth changes to refresh redirects. Watching auth and recreating GoRouter resets
+navigation to `/splash` and discards open feature/modal state. Splash also checks
+for a pending Android doubt capture and routes it to `/snap-doubt` for image recovery.
+
 ```
 Splash + onboarding:
   /splash               → SplashScreen (routes to /home, /onboarding, or /login)

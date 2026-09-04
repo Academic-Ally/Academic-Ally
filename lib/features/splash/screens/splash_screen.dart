@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../config/theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../snap_doubt/services/doubt_capture_service.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -70,7 +71,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      context.go('/home');
+      final pending = await DoubtCaptureService().hasPending(user.uid);
+      if (!mounted) return;
+      context.go(pending ? '/snap-doubt' : '/home');
       return;
     }
 
