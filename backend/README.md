@@ -126,7 +126,7 @@ The backend is set up for one-click Railway deployment.
 
 ### One-time setup
 
-1. **Push `master` to GitHub.** Railway watches that branch.
+1. **Push `master` to GitHub.** Railway watches that branch and auto-deploys every push (project `980e8788-589c-4568-b838-3a28240a4f6e`, service `df9d6092-baa9-4cd1-95a1-b159514b7bf4` on railway.com). After pushing, confirm the deploy actually went live: `GET /health` on the production URL must NOT contain a `demo_fallback_enabled` key — that key only exists in builds older than commit `6ab4eea`.
 2. **In Railway, create a new project from the repo, root dir `backend/`.**
 3. **Set these environment variables on the Railway service:**
 
@@ -139,7 +139,6 @@ The backend is set up for one-click Railway deployment.
    | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full content of `service-account.json` (see below) |
    | `LLM_MODEL` (optional) | Defaults to `gemini/gemini-2.5-flash-lite` |
    | `LOG_LEVEL` (optional) | Defaults to `INFO` |
-   | `DEMO_FALLBACK_ENABLED` (temporary) | Defaults to `true`; serves deterministic demo responses only for IT semesters 1–2 while Gemini quota is unavailable. Set `false` after quota is restored. |
 
 4. **Deploy.** Railway will run `uv sync --frozen --no-dev` then `uv run uvicorn …`.
 5. **Point Flutter at the Railway URL.** Production defaults to the URL in `lib/core/constants/app_constants.dart`; override it for a particular run or build with `--dart-define=AI_BACKEND_BASE_URL=https://<your-service>.up.railway.app`.

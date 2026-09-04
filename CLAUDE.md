@@ -6,7 +6,7 @@ Academic Ally is a resources platform (notes, question papers, question banks, s
 
 ---
 
-## 🚨 Current Status (2026-08-29) — SUBMISSION COMPLETE, PRODUCT REVIVAL NEXT
+## 🚨 Current Status (2026-09-04) — SUBMISSION COMPLETE, PRODUCT REVIVAL NEXT
 
 The thesis, final 25-slide presentation, and viva preparation note in the local-only
 `../Shoaib Choudry Major/` folder were completed and approved by the owner on
@@ -18,19 +18,21 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 
 | What | State | Effect |
 |---|---|---|
-| Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` activated after the ₹1,000 prepayment. | Project is back on Blaze and Firebase Storage access recovered. Continue monitoring usage and budget alerts. |
-| Railway backend | **LIVE** — health check passes | All 5 AI endpoints are deployed at `academic-ally-production-503f.up.railway.app`; a new app release is required to replace the old URL in shipped builds. |
+| Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` is `OPEN=True`, linked to `academic-ally-app` with `billingEnabled: true` (verified with `gcloud` 2026-09-04). | Project is on Blaze; Firebase Storage serves PDFs again. The account was activated with a ₹1,000 UPI prepayment — see `../HANDOFF.md` §2 for the prepaid→postpaid question. |
+| Gemini API | **PAID TIER** — the AI Studio project `gen-lang-client-0505555931` (owner of the key in `backend/.env`) is linked to the same billing account. 60 parallel `generateContent` calls returned 200 on 2026-09-04; free tier would have thrown 429s. | The `429 RESOURCE_EXHAUSTED` limitation seen on 2026-08-29 is gone. Gemini spend is **not** covered by the ₹200 `stopBilling` cap. |
+| Railway backend | **LIVE but on a STALE BUILD** (2026-09-04) | `/health` at `academic-ally-production-503f.up.railway.app` still returns `demo_fallback_enabled: true`, which only exists in builds older than `6ab4eea`. Railway auto-deploys on push to `master`; the deploys for `6ab4eea`/`2797ef5` never went live. Redeploy from the Railway dashboard (or push a commit) and re-check `/health` — the key must disappear. |
 
-**Presentation safeguard (2026-08-29):** the current Gemini API account returns
-`429 RESOURCE_EXHAUSTED` because its prepayment credits are depleted. Do not enable
-or change billing without the owner. While `DEMO_FALLBACK_ENABLED=true`, requests for
-the IT branch in semesters 1 and 2 use deterministic backend responses and still
-advance the normal Firestore agent-progress tracker. Set the flag to `false` after
-Gemini quota is restored; all other curricula continue to use the live AI path.
+**Demo fallback is GONE from the code** (commit `6ab4eea`, 2026-08-30): no
+`DEMO_FALLBACK_ENABLED` setting, no `demo_fallback.py`, no client-side mock path. Any
+`DEMO_FALLBACK_ENABLED` variable still set on Railway is ignored (`extra="ignore"`).
+Do not reintroduce mock output.
 
-Data is **fully intact**: 6,481 PDFs / ~31 GB in `academic-ally-app.appspot.com`,
-Firestore trees (OU + JNTUH) healthy. Because 31 GB > Spark's 5 GB free tier,
-**Blaze is mandatory** — there is no free-tier path back.
+Data is **fully intact and fully reachable** (read-only audit 2026-09-04): `Resources/`
+holds **6,481 PDFs / 28.9 GiB**; every object has exactly one Firestore doc whose
+`storageId` matches; every (branch, sem, subject) group appears in `QueryList`; and
+all 6,474 PDFs of the owner's offline backup (`F:\ACADEMIC ALLY\...\Academic Ally
+Complete Drive v1`) exist in the bucket by name+size (the 7 extra bucket objects are
+in-app user uploads). Because 28.9 GiB > Spark's 5 GB free tier, **Blaze is mandatory**.
 
 ### ⚠️ THIS IS A LIVE PRODUCTION OUTAGE, NOT JUST A DEMO PROBLEM
 
@@ -43,9 +45,12 @@ has been the case since billing lapsed around July 2026.
 Treat `master` as production code. Restoring billing is urgent for users, not
 only for the major-project demo.
 
-Revival order: (1) verify one client-side PDF download and one AI flow end to end,
-(2) publish a Flutter release containing the restored backend URL when the cofounder
-is available, (3) re-verify the `stopBilling` cap, (4) app bugs + UI work.
+Revival order: (1) get Railway onto current `master` and run one AI flow end to end
+against genuine Gemini output, (2) publish a Flutter release containing the restored
+backend URL when the cofounder is available (the Play Store build still has the dead
+URL), (3) re-verify the `stopBilling` budget wiring (`billingbudgets.googleapis.com` is
+not enabled on the project, so the budget could not be listed from `gcloud`), (4) app
+bugs + UI work. A client-side PDF download was verified on an emulator on 2026-08-30.
 
 The non-technical submission work is complete. Do not spend technical sessions on
 thesis screenshots or PPT work unless the owner explicitly reopens that scope.
@@ -446,7 +451,7 @@ cd academic_ally/backend
 | Backend (Node.js) | Firebase Functions — `stopBilling` (billing cap only) |
 | Backend (Python) — Cloud | Firebase Functions Gen 2 — LEGACY: only `pyq_analyze` deployed, Flutter no longer points here |
 
-**Firebase project:** `academic-ally-app` · **Plan:** Blaze — ⚠️ **billing account currently CLOSED (2026-08-27), Storage returns 402** · **Billing cap:** ₹200/month auto-disable via `stopBilling` function (Firebase only; Gemini costs separate, uncapped) — re-verify the budget/Pub/Sub wiring after billing is re-linked
+**Firebase project:** `academic-ally-app` · **Plan:** Blaze — billing account `01CF4E-E7121B-EBB122` open and linked (verified 2026-09-04) · **Billing cap:** ₹200/month auto-disable via `stopBilling` function (deployed, `asia-south1`, topic `billing-alerts` exists; Firebase only — Gemini costs are billed to the same account but are NOT capped) — the budget→Pub/Sub link itself still needs re-verifying in the console
 
 ---
 
