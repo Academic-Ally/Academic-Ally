@@ -661,12 +661,19 @@ class _MetaChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: AppTheme.primaryColor),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.w500,
+          // Subject names can exceed the chip's available width on small
+          // phones; Flexible lets the chip shrink and ellipsise instead of
+          // overflowing the Wrap it sits in.
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

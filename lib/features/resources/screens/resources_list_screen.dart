@@ -273,10 +273,16 @@ class _ResourceCard extends StatelessWidget {
                       ),
                       if (resource.units.isNotEmpty) ...[
                         const SizedBox(width: 12),
-                        Text(
-                          'Units: ${resource.units.join(", ")}',
-                          style: TextStyle(
-                              fontSize: 12, color: context.faintText),
+                        // Unit lists are uploader-supplied free text and can
+                        // be long; bound them so the meta row never overflows.
+                        Expanded(
+                          child: Text(
+                            'Units: ${resource.units.join(", ")}',
+                            style: TextStyle(
+                                fontSize: 12, color: context.faintText),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ],

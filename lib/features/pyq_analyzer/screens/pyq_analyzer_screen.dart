@@ -572,14 +572,22 @@ class _PredictedQuestionCard extends StatelessWidget {
                   color: context.mutedText,
                 ),
               ),
-              const Spacer(),
-              Text(
-                question.topic,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: context.mutedText,
+              const SizedBox(width: 8),
+              // Topic names come from the LLM and can be long ("Indian
+              // Philosophy and Culture (Unit I)"). Expanded gives the text a
+              // bounded width so the ellipsis can actually kick in; a Spacer +
+              // bare Text overflowed on narrow screens.
+              Expanded(
+                child: Text(
+                  question.topic,
+                  textAlign: TextAlign.end,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: context.mutedText,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
