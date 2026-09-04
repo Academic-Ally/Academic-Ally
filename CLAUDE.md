@@ -20,7 +20,7 @@ The project sat dormant ~3.5 months (May–Aug 2026). Code is intact and synced;
 |---|---|---|
 | Google Cloud billing | **RESTORED** — account `01CF4E-E7121B-EBB122` is `OPEN=True`, linked to `academic-ally-app` with `billingEnabled: true` (verified with `gcloud` 2026-09-04). | Project is on Blaze; Firebase Storage serves PDFs again. The account was activated with a ₹1,000 UPI prepayment; the prepaid→postpaid question is documented in the owner's local-only workspace-root `CLAUDE.md` (Handoff log). |
 | Gemini API | **PAID TIER** — the AI Studio project `gen-lang-client-0505555931` (owner of the key in `backend/.env`) is linked to the same billing account. 60 parallel `generateContent` calls returned 200 on 2026-09-04; free tier would have thrown 429s. | The `429 RESOURCE_EXHAUSTED` limitation seen on 2026-08-29 is gone. Gemini spend is **not** covered by the ₹200 `stopBilling` cap. |
-| Railway backend | **LIVE but on a STALE BUILD, and its Gemini key is DEAD** (2026-09-04) | (a) `/health` at `academic-ally-production-503f.up.railway.app` still returns `demo_fallback_enabled: true`, which only exists in builds older than `6ab4eea`. The GitHub auto-deploy did not fire for `6ab4eea`, `2797ef5` or `8a70ab2` (polled 8 min after push) — check the service's GitHub connection in the Railway dashboard and redeploy. (b) A genuine `/generate_study_plan` call as a real Firebase user failed after 298 s with `429 RESOURCE_EXHAUSTED: Your prepayment credits are depleted` — so the `GEMINI_API_KEY` set on Railway is a **different key** from the one in `backend/.env` (that one belongs to `gen-lang-client-0505555931` and works). Fix: paste the `backend/.env` key into the Railway service's `GEMINI_API_KEY` variable. Until both are done, every AI feature fails in production. |
+| Railway backend | **FIXED 2026-09-04 (evening)** — Codex replaced the service's `GEMINI_API_KEY` with the working key and redeployed; `/health` no longer carries the stale-build marker (`demo_fallback_enabled`) and `backend/scripts/verify_prod_ai.py` got a genuine `/generate_study_plan` 200 in 55 s. Study Planner also verified from inside the emulator build. | **Deploys are manual until further notice:** the Railway GitHub App lost access to the repo ("GitHub Repo not found"), and only an org Owner (`affan880`) can reinstall it. After every push, redeploy from the Railway dashboard and re-check `/health` for the marker. |
 
 **Demo fallback is GONE from the code** (commit `6ab4eea`, 2026-08-30): no
 `DEMO_FALLBACK_ENABLED` setting, no `demo_fallback.py`, no client-side mock path. Any
@@ -38,19 +38,20 @@ in-app user uploads). Because 28.9 GiB > Spark's 5 GB free tier, **Blaze is mand
 
 **The Flutter build is what ships on the Play Store** (`com.academically`, v1.0.0
 — confirmed by the repo owner 2026-08-27; the React Native app was replaced).
-So this codebase is the live app, and the two failures above are hitting **real
-users right now**: nobody can open a PDF, and every AI feature errors out. This
-has been the case since billing lapsed around July 2026.
+So this codebase is the live app. Billing and the backend are fixed as of
+2026-09-04, but **installed apps still point at the dead Railway URL** until the
+`1.0.1+2` release ships, so real users still have no AI features until then (PDFs
+work again already because Storage recovered).
 
 Treat `master` as production code. Restoring billing is urgent for users, not
 only for the major-project demo.
 
-Revival order: (1) get Railway onto current `master` and run one AI flow end to end
-against genuine Gemini output, (2) publish a Flutter release containing the restored
-backend URL when the cofounder is available (the Play Store build still has the dead
-URL), (3) re-verify the `stopBilling` budget wiring (`billingbudgets.googleapis.com` is
-not enabled on the project, so the budget could not be listed from `gcloud`), (4) app
-bugs + UI work. A client-side PDF download was verified on an emulator on 2026-08-30.
+Revival order: (1) ~~Railway + one genuine AI run~~ DONE 2026-09-04, (2) publish a
+Flutter release (`1.0.1+2`, signed with Affan's upload keystore — see the Play Store
+build note below) so installed apps stop pointing at the dead URL, (3) have Affan
+reinstall the Railway GitHub App so pushes auto-deploy again, (4) re-verify the
+`stopBilling` budget wiring (`billingbudgets.googleapis.com` is not enabled on the
+project, so the budget could not be listed from `gcloud`), (5) app bugs + UI work.
 
 The non-technical submission work is complete. Do not spend technical sessions on
 thesis screenshots or PPT work unless the owner explicitly reopens that scope.
