@@ -168,13 +168,21 @@ Paste the resulting string. The backend auto-detects raw vs base64 in [`firebase
 
 ### Verifying the deploy
 
-Hit the public URL:
+Two levels. The quick one hits the public URL:
 
 ```bash
 curl https://academic-ally-production-503f.up.railway.app/health
 ```
 
-Expect `firebase_credential_source: "service_account_env"` and `firebase_initialized: true`. If either is missing, check the env var is set and not empty in Railway's dashboard.
+Expect `firebase_credential_source: "service_account_env"` and `firebase_initialized: true`, and **no** `demo_fallback_enabled` key (that key only exists in builds older than `6ab4eea` — if you see it, the deploy did not pick up current `master`).
+
+The real one proves Gemini works through the deployed service exactly as the app calls it:
+
+```bash
+uv run python scripts/verify_prod_ai.py            # defaults to the production URL
+```
+
+It mints a Firebase ID token for a throwaway user, runs one genuine Study Planner crew (a few rupees of Gemini), prints the outcome, and deletes the test user and every document it created. Exit code 0 means real AI output was produced; a `429 … prepayment credits are depleted` failure means the `GEMINI_API_KEY` on the service is the wrong key.
 
 ### Cost watch
 
