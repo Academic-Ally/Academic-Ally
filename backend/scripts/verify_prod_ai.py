@@ -95,9 +95,13 @@ def main() -> int:
         st, res = _post(f"{base}/generate_study_plan", body, {"Authorization": f"Bearer {id_token}"})
         print(f"/generate_study_plan -> HTTP {st} in {time.time() - t0:.0f}s")
         if st == 200 and isinstance(res, dict) and res.get("plan_id"):
-            tasks = res.get("tasks") or res.get("daily_tasks") or []
-            print("GENUINE OUTPUT: plan_id =", res["plan_id"], "| tasks =", len(tasks))
-            print("strategy:", str(res.get("overall_strategy"))[:240])
+            days = res.get("days") or []
+            n_tasks = sum(len(d.get("tasks") or []) for d in days)
+            print(f"GENUINE OUTPUT: plan_id = {res['plan_id']} | days = {len(days)} | tasks = {n_tasks}")
+            print("strategy:", str(res.get("overallStrategy"))[:240])
+            if days and days[0].get("tasks"):
+                t = days[0]["tasks"][0]
+                print("first task:", t.get("subject"), "->", t.get("topic"), f"({t.get('durationMinutes')} min)")
             ok = True
         else:
             print("FAILED:", json.dumps(res, indent=1)[:1200] if isinstance(res, dict) else res)
