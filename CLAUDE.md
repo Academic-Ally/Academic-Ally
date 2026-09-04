@@ -246,6 +246,14 @@ fail with the cryptic `What went wrong: 25.0.2`. Fix once per machine: install a
 (adjust the path to whatever was installed). This is a user-level Flutter setting, not
 a repo change.
 
+**Play Store build (2026-09-04):** `android/app/build.gradle.kts` signs the release
+build with `android/key.properties` + the upload keystore when they exist (both
+gitignored) and falls back to the debug key with a Gradle warning when they don't. A
+debug-signed build is fine for the emulator or a side-loaded APK but **Play rejects it**.
+Whoever uploads must have the upload keystore that signed 1.0.0 (Affan) and run
+`flutter build appbundle --release` with `key.properties` in place. Bump `version:` in
+`pubspec.yaml` before every upload (currently `1.0.1+2`).
+
 The Flutter app runs immediately. The Python backend needs two files that are
 gitignored and can never be committed:
 

@@ -1,9 +1,28 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+}
+
+// Release signing. Play Store uploads must be signed with the app's upload key,
+// which lives OUTSIDE the repo. Drop the keystore next to this file and create
+// android/key.properties (both are gitignored) with:
+//   storeFile=upload-keystore.jks
+//   storePassword=...
+//   keyAlias=upload
+//   keyPassword=...
+// When key.properties is absent (CI, a fresh clone, an emulator smoke test) the
+// release build falls back to the debug key so `flutter run --release` still works,
+// but such a build can NOT be uploaded to Play.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {
@@ -31,11 +50,28 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "academic_ally: android/key.properties not found - release build is " +
+                        "signed with the DEBUG key and cannot be uploaded to Google Play."
+                )
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
